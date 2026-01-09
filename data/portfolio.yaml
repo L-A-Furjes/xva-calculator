@@ -1,0 +1,41 @@
+# Sample Portfolio for xVA Calculation Engine
+# Contains a mix of IRS and FX Forward trades
+
+portfolio:
+  # Interest Rate Swaps
+  irs_trades:
+    - notional: 10000000       # $10M
+      fixed_rate: 0.025        # 2.5%
+      maturity_years: 5.0
+      pay_fixed: true          # Payer swap
+      payment_frequency: 0.5   # Semi-annual
+
+    - notional: 15000000       # $15M
+      fixed_rate: 0.020        # 2.0%
+      maturity_years: 3.0
+      pay_fixed: false         # Receiver swap
+      payment_frequency: 0.5
+
+    - notional: 8000000        # $8M
+      fixed_rate: 0.030        # 3.0%
+      maturity_years: 7.0
+      pay_fixed: true
+      payment_frequency: 0.25  # Quarterly
+
+  # FX Forwards
+  fxf_trades:
+    - notional_foreign: 5000000  # 5M EUR
+      strike: 1.12               # USD/EUR forward rate
+      maturity_years: 1.0
+      buy_foreign: true          # Buy EUR, sell USD
+
+    - notional_foreign: 3000000  # 3M EUR
+      strike: 1.08
+      maturity_years: 2.0
+      buy_foreign: false         # Sell EUR, buy USD
+
+# Portfolio Summary:
+# - Total IRS Notional: $33M
+# - Total FX Notional: 8M EUR (~$8.8M at 1.10)
+# - Max Maturity: 7 years
+# - 5 trades total

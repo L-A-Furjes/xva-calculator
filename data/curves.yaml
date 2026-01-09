@@ -1,0 +1,37 @@
+# Market Configuration for xVA Calculation Engine
+# This file contains market data and model parameters
+
+market:
+  # Risk-free OIS rate (continuously compounded)
+  ois_rate: 0.020  # 2%
+
+  # Funding spread over OIS in basis points
+  funding_spread_bps: 100  # 1%
+
+  # Cost of capital for KVA (hurdle rate)
+  cost_of_capital: 0.10  # 10%
+
+  # Domestic Interest Rate Model (Ornstein-Uhlenbeck)
+  domestic_rate_model:
+    kappa: 0.10       # Mean reversion speed
+    theta: 0.020      # Long-term mean (2%)
+    sigma: 0.010      # Volatility (100 bps)
+    initial_rate: 0.020  # Starting rate
+
+  # Foreign Interest Rate Model (Ornstein-Uhlenbeck)
+  foreign_rate_model:
+    kappa: 0.08       # Mean reversion speed
+    theta: 0.015      # Long-term mean (1.5%)
+    sigma: 0.012      # Volatility (120 bps)
+    initial_rate: 0.015  # Starting rate
+
+  # FX Model (Geometric Brownian Motion)
+  fx_model:
+    initial_spot: 1.10   # EUR/USD spot rate
+    volatility: 0.12     # 12% annualized vol
+
+  # Cross-asset correlations
+  correlations:
+    domestic_foreign: 0.70   # High positive (both rates move together)
+    domestic_fx: -0.30       # Negative (USD rates up -> EUR/USD down)
+    foreign_fx: 0.40         # Positive (EUR rates up -> EUR/USD up)

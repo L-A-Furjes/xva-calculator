@@ -1,0 +1,30 @@
+# Credit Configuration for xVA Calculation Engine
+# Contains hazard rates and recovery assumptions
+
+credit:
+  # Counterparty credit parameters
+  counterparty:
+    # Hazard rate in basis points (per annum)
+    # ~120 bps implies ~5.8% 5Y cumulative PD
+    hazard_rate_bps: 120
+
+    # Recovery rate (1 - LGD)
+    recovery_rate: 0.40
+
+    # Credit rating (informational)
+    rating: "BBB"
+
+  # Own credit parameters (for DVA)
+  own:
+    # Our hazard rate (typically lower if we're a bank)
+    hazard_rate_bps: 100
+
+    # Our recovery rate
+    recovery_rate: 0.40
+
+    # Our rating
+    rating: "A"
+
+# Derived LGD values (for reference):
+# counterparty_lgd = 1 - 0.40 = 0.60 (60%)
+# own_lgd = 1 - 0.40 = 0.60 (60%)
