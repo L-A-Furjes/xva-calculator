@@ -149,7 +149,7 @@ class GBMFXModel:
         return self.S0 * np.exp((r_d - r_f) * tau)
 
     @classmethod
-    def from_config(cls, config: "FXModelConfig") -> "GBMFXModel":  # type: ignore[name-defined]
+    def from_config(cls, config: "FXModelConfig") -> "GBMFXModel":  # noqa: F821
         """
         Create model from configuration object.
 

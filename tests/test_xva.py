@@ -3,7 +3,6 @@ Tests for xVA calculations: CVA, DVA, FVA, MVA, KVA.
 """
 
 import numpy as np
-import pytest
 
 from xva_core.xva import (
     CVACalculator,

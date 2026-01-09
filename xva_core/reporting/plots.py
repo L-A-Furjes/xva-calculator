@@ -7,14 +7,13 @@ Provides both Matplotlib and Plotly chart generators.
 from typing import Any
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from xva_core._types import FloatArray
 
 # Try to import plotly
 try:
     import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+    from plotly.subplots import make_subplots  # noqa: F401
 
     PLOTLY_AVAILABLE = True
 except ImportError:
@@ -197,7 +196,9 @@ def _create_xva_bar_chart_plotly(
     metrics = ["CVA", "DVA", "FVA", "MVA", "KVA"]
     values = [xva_values.get(m, 0) for m in metrics]
     # DVA is shown as negative (benefit)
-    display_values = [v if m != "DVA" else -v for m, v in zip(metrics, values)]
+    display_values = [
+        v if m != "DVA" else -v for m, v in zip(metrics, values, strict=False)
+    ]
     values_m = [v / 1e6 for v in display_values]
 
     fig = go.Figure()
@@ -233,7 +234,9 @@ def _create_xva_bar_chart_mpl(
 
     metrics = ["CVA", "DVA", "FVA", "MVA", "KVA"]
     values = [xva_values.get(m, 0) for m in metrics]
-    display_values = [v if m != "DVA" else -v for m, v in zip(metrics, values)]
+    display_values = [
+        v if m != "DVA" else -v for m, v in zip(metrics, values, strict=False)
+    ]
     values_m = [v / 1e6 for v in display_values]
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -241,7 +244,7 @@ def _create_xva_bar_chart_mpl(
     bars = ax.bar(metrics, values_m, color=colors)
 
     # Add value labels
-    for bar, val in zip(bars, values_m):
+    for bar, val in zip(bars, values_m, strict=False):
         height = bar.get_height()
         ax.annotate(
             f"${val:.2f}M",

@@ -3,7 +3,6 @@ Tests for SA-CCR regulatory capital calculation.
 """
 
 import numpy as np
-import pytest
 
 from xva_core.instruments import FXForward, IRSwap
 from xva_core.reg.saccr import (

@@ -217,7 +217,7 @@ class FXForward(Instrument):
         }
 
     @classmethod
-    def from_config(cls, config: "FXForwardConfig") -> "FXForward":  # type: ignore[name-defined]
+    def from_config(cls, config: "FXForwardConfig") -> "FXForward":  # noqa: F821
         """
         Create forward from configuration.
 

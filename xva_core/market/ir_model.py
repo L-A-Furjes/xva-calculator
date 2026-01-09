@@ -229,7 +229,7 @@ class OUShortRateModel:
         return paths
 
     @classmethod
-    def from_config(cls, config: "OUModelConfig") -> "OUShortRateModel":  # type: ignore[name-defined]
+    def from_config(cls, config: "OUModelConfig") -> "OUShortRateModel":  # noqa: F821
         """
         Create model from configuration object.
 

@@ -174,7 +174,9 @@ class CholeskyCorrelation:
         return z_domestic, z_foreign, z_fx
 
     @classmethod
-    def from_config(cls, config: "CorrelationConfig") -> "CholeskyCorrelation":  # type: ignore[name-defined]
+    def from_config(
+        cls, config: "CorrelationConfig"
+    ) -> "CholeskyCorrelation":  # noqa: F821
         """
         Create from configuration object.
 

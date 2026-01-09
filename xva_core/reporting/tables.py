@@ -4,7 +4,7 @@ Table generation utilities for xVA reporting.
 Creates formatted pandas DataFrames for display and export.
 """
 
-from typing import Any, Sequence
+from collections.abc import Sequence
 
 import pandas as pd
 

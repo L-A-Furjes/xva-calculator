@@ -219,7 +219,7 @@ def main() -> None:
         prefix="demo",
     )
 
-    for name, path in files.items():
+    for _name, path in files.items():
         print(f"   Saved: {path}")
 
     print()

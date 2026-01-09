@@ -121,7 +121,7 @@ class TestMonteCarloEngine:
         engine = MonteCarloEngine(n_paths=100, horizon=5.0, dt=0.25, seed=42)
 
         result1 = engine.simulate([sample_swap], market_config)
-        result2 = engine.simulate([sample_swap], market_config)
+        engine.simulate([sample_swap], market_config)
 
         # Need to reset seed for second run
         engine2 = MonteCarloEngine(n_paths=100, horizon=5.0, dt=0.25, seed=42)

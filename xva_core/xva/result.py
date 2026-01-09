@@ -5,9 +5,6 @@ Provides a unified interface for calculating and storing all xVA metrics.
 """
 
 from dataclasses import dataclass
-from typing import Any
-
-import numpy as np
 
 from xva_core._types import FloatArray
 from xva_core.xva.cva import CVACalculator
@@ -105,7 +102,7 @@ class XVAResult:
             xVA components in basis points
         """
         if notional <= 0:
-            return {k: 0.0 for k in self.to_dict()}
+            return dict.fromkeys(self.to_dict(), 0.0)
 
         multiplier = 10000 / notional  # Convert to bps
         return {k: v * multiplier for k, v in self.to_dict().items()}

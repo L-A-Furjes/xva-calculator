@@ -12,9 +12,10 @@ where:
     PFE = potential future exposure = multiplier × AddOn
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 

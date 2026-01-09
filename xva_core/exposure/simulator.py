@@ -5,8 +5,8 @@ Coordinates the joint simulation of interest rates and FX rates,
 then computes instrument MTMs along each path.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import numpy as np
 

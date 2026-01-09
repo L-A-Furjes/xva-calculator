@@ -247,7 +247,7 @@ class IRSwap(Instrument):
         }
 
     @classmethod
-    def from_config(cls, config: "IRSwapConfig") -> "IRSwap":  # type: ignore[name-defined]
+    def from_config(cls, config: "IRSwapConfig") -> "IRSwap":  # noqa: F821
         """
         Create swap from configuration.
 

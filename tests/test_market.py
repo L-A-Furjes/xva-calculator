@@ -74,7 +74,7 @@ class TestOUShortRateModel:
 
     def test_expected_rate_convergence(self, ou_model: OUShortRateModel) -> None:
         """Expected rate should converge to theta."""
-        expected_10y = ou_model.expected_rate(10.0)
+        ou_model.expected_rate(10.0)
         expected_50y = ou_model.expected_rate(50.0)
         assert np.isclose(expected_50y, ou_model.theta, rtol=1e-3)
 

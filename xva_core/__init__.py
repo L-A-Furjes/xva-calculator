@@ -20,20 +20,11 @@ __author__ = "Lucas"
 # Core types
 from xva_core._types import FloatArray, IntArray, PathArray
 
+# Collateral
+from xva_core.collateral import InitialMargin, VariationMargin
+
 # Configuration
 from xva_core.config import MarketConfig, PortfolioConfig, SimulationConfig, load_config
-
-# Market models
-from xva_core.market import (
-    CholeskyCorrelation,
-    DiscountCurve,
-    GBMFXModel,
-    HazardCurve,
-    OUShortRateModel,
-)
-
-# Instruments
-from xva_core.instruments import FXForward, IRSwap, Instrument
 
 # Exposure
 from xva_core.exposure import (
@@ -45,17 +36,16 @@ from xva_core.exposure import (
     calculate_pfe,
 )
 
-# Collateral
-from xva_core.collateral import InitialMargin, VariationMargin
+# Instruments
+from xva_core.instruments import FXForward, Instrument, IRSwap
 
-# xVA calculations
-from xva_core.xva import (
-    CVACalculator,
-    DVACalculator,
-    FVACalculator,
-    KVACalculator,
-    MVACalculator,
-    XVAResult,
+# Market models
+from xva_core.market import (
+    CholeskyCorrelation,
+    DiscountCurve,
+    GBMFXModel,
+    HazardCurve,
+    OUShortRateModel,
 )
 
 # Regulatory
@@ -67,6 +57,16 @@ from xva_core.reporting import (
     create_exposure_plot,
     create_xva_breakdown_table,
     export_to_csv,
+)
+
+# xVA calculations
+from xva_core.xva import (
+    CVACalculator,
+    DVACalculator,
+    FVACalculator,
+    KVACalculator,
+    MVACalculator,
+    XVAResult,
 )
 
 __all__ = [

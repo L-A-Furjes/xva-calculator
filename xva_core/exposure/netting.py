@@ -5,8 +5,8 @@ A netting set is a group of trades that can be netted in case of
 counterparty default under a master agreement (e.g., ISDA).
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import numpy as np
 
