@@ -175,7 +175,7 @@ class CholeskyCorrelation:
 
     @classmethod
     def from_config(
-        cls, config: "CorrelationConfig"
+        cls, config: "CorrelationConfig"  # noqa: F821
     ) -> "CholeskyCorrelation":  # noqa: F821
         """
         Create from configuration object.
