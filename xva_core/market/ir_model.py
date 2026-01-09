@@ -87,9 +87,7 @@ class OUShortRateModel:
         float
             Var[r(t)] = (σ² / 2κ) * (1 - exp(-2κt))
         """
-        return (self.sigma**2 / (2 * self.kappa)) * (
-            1 - np.exp(-2 * self.kappa * t)
-        )
+        return (self.sigma**2 / (2 * self.kappa)) * (1 - np.exp(-2 * self.kappa * t))
 
     def long_term_variance(self) -> float:
         """
@@ -221,7 +219,9 @@ class OUShortRateModel:
             # Exact mean and variance
             exp_kdt = np.exp(-self.kappa * dt)
             mean = self.theta + (paths[:, i] - self.theta) * exp_kdt
-            var = (self.sigma**2 / (2 * self.kappa)) * (1 - np.exp(-2 * self.kappa * dt))
+            var = (self.sigma**2 / (2 * self.kappa)) * (
+                1 - np.exp(-2 * self.kappa * dt)
+            )
             std = np.sqrt(var)
 
             paths[:, i + 1] = mean + std * z[:, i]

@@ -112,9 +112,7 @@ class HazardCurve:
         s2 = self.survival_probability(t2)
         return float(s1 - s2)
 
-    def incremental_default_probabilities(
-        self, time_grid: FloatArray
-    ) -> FloatArray:
+    def incremental_default_probabilities(self, time_grid: FloatArray) -> FloatArray:
         """
         Calculate incremental default probabilities for each period.
 
@@ -163,7 +161,9 @@ class HazardCurve:
         return self.hazard_rate * self.lgd
 
     @classmethod
-    def from_cds_spread(cls, spread: float, recovery_rate: float = 0.4) -> "HazardCurve":
+    def from_cds_spread(
+        cls, spread: float, recovery_rate: float = 0.4
+    ) -> "HazardCurve":
         """
         Create hazard curve from CDS spread.
 

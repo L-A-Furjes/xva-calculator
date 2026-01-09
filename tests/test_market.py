@@ -17,7 +17,9 @@ from xva_core.market import (
 class TestDiscountCurve:
     """Tests for DiscountCurve class."""
 
-    def test_flat_curve_discount_factor(self, flat_discount_curve: DiscountCurve) -> None:
+    def test_flat_curve_discount_factor(
+        self, flat_discount_curve: DiscountCurve
+    ) -> None:
         """Test flat curve discount factor calculation."""
         df_1y = flat_discount_curve.discount_factor(1.0)
         expected = np.exp(-0.02 * 1.0)
@@ -27,7 +29,9 @@ class TestDiscountCurve:
         """Discount factor at t=0 should be 1."""
         assert flat_discount_curve.discount_factor(0.0) == 1.0
 
-    def test_discount_factor_decreasing(self, flat_discount_curve: DiscountCurve) -> None:
+    def test_discount_factor_decreasing(
+        self, flat_discount_curve: DiscountCurve
+    ) -> None:
         """Discount factors should decrease with time."""
         df_1y = flat_discount_curve.discount_factor(1.0)
         df_5y = flat_discount_curve.discount_factor(5.0)
@@ -128,7 +132,9 @@ class TestGBMFXModel:
 class TestCholeskyCorrelation:
     """Tests for correlation handling."""
 
-    def test_correlation_matrix_symmetric(self, correlation: CholeskyCorrelation) -> None:
+    def test_correlation_matrix_symmetric(
+        self, correlation: CholeskyCorrelation
+    ) -> None:
         """Correlation matrix should be symmetric."""
         corr_mat = correlation.correlation_matrix
         assert np.allclose(corr_mat, corr_mat.T)
@@ -138,7 +144,9 @@ class TestCholeskyCorrelation:
         corr_mat = correlation.correlation_matrix
         assert np.allclose(np.diag(corr_mat), 1.0)
 
-    def test_correlated_samples_empirical(self, correlation: CholeskyCorrelation) -> None:
+    def test_correlated_samples_empirical(
+        self, correlation: CholeskyCorrelation
+    ) -> None:
         """Empirical correlation should match target."""
         z_d, z_f, z_x = correlation.generate_correlated_samples(
             n_paths=50000, n_steps=1, seed=42

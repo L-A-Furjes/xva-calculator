@@ -290,8 +290,14 @@ def create_saccr_summary_table(
         Summary table
     """
     data = [
-        {"Component": "Replacement Cost (RC)", "Value ($M)": saccr_result.replacement_cost / 1e6},
-        {"Component": "Aggregate Add-On", "Value ($M)": saccr_result.aggregate_addon / 1e6},
+        {
+            "Component": "Replacement Cost (RC)",
+            "Value ($M)": saccr_result.replacement_cost / 1e6,
+        },
+        {
+            "Component": "Aggregate Add-On",
+            "Value ($M)": saccr_result.aggregate_addon / 1e6,
+        },
         {"Component": "Multiplier", "Value ($M)": saccr_result.multiplier},
         {"Component": "PFE", "Value ($M)": saccr_result.pfe / 1e6},
         {"Component": "EAD (alpha=1.4)", "Value ($M)": saccr_result.ead / 1e6},

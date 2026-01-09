@@ -191,15 +191,15 @@ class SACCRCalculator:
             addon_by_class[asset_class] += addon**2  # For geometric aggregation
 
         # Aggregate add-ons within each asset class (geometric)
-        class_addons = {
-            ac: np.sqrt(val) for ac, val in addon_by_class.items()
-        }
+        class_addons = {ac: np.sqrt(val) for ac, val in addon_by_class.items()}
 
         # Total add-on across classes (simple sum for this implementation)
         aggregate_addon = sum(class_addons.values())
 
         # Multiplier (simplified)
-        multiplier = self._calculate_multiplier(current_mtm, collateral, aggregate_addon)
+        multiplier = self._calculate_multiplier(
+            current_mtm, collateral, aggregate_addon
+        )
 
         # PFE
         pfe = multiplier * aggregate_addon
@@ -362,7 +362,9 @@ def calculate_ir_addon(
     float
         IR add-on
     """
-    mf = np.sqrt(min(maturity, 5.0)) if maturity >= 1.0 else np.sqrt(max(maturity, 0.01))
+    mf = (
+        np.sqrt(min(maturity, 5.0)) if maturity >= 1.0 else np.sqrt(max(maturity, 0.01))
+    )
     return notional * supervisory_factor * mf
 
 

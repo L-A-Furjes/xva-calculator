@@ -50,7 +50,9 @@ class InitialMargin:
         if not 0 < self.quantile < 1:
             raise ValueError(f"Quantile must be in (0, 1), got {self.quantile}")
         if self.method not in ("simple", "quantile"):
-            raise ValueError(f"Method must be 'simple' or 'quantile', got {self.method}")
+            raise ValueError(
+                f"Method must be 'simple' or 'quantile', got {self.method}"
+            )
 
     def calculate(
         self,

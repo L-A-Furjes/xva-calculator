@@ -44,7 +44,9 @@ class TestIRSwap:
         time_grid = np.linspace(0, 5, 21)
         n_paths = 100
         paths_data = {
-            "df_domestic": np.exp(-0.02 * time_grid).reshape(1, -1).repeat(n_paths, axis=0)
+            "df_domestic": np.exp(-0.02 * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0)
         }
 
         # Create matching swaps
@@ -95,8 +97,12 @@ class TestFXForward:
         n_paths = 10
         paths_data = {
             "fx_spot": np.full((n_paths, 3), 1.10),
-            "df_domestic": np.exp(-0.02 * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
-            "df_foreign": np.exp(-0.015 * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
+            "df_domestic": np.exp(-0.02 * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
+            "df_foreign": np.exp(-0.015 * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
         }
 
         # At t=2, forward is expired
@@ -120,8 +126,12 @@ class TestFXForward:
         n_paths = 100
         paths_data = {
             "fx_spot": np.full((n_paths, 2), S0),
-            "df_domestic": np.exp(-r_d * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
-            "df_foreign": np.exp(-r_f * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
+            "df_domestic": np.exp(-r_d * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
+            "df_foreign": np.exp(-r_f * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
         }
 
         mtm = fwd.calculate_mtm(0, time_grid, paths_data)
@@ -134,12 +144,20 @@ class TestFXForward:
         n_paths = 100
         paths_data = {
             "fx_spot": np.full((n_paths, 5), 1.15),  # Spot above strike
-            "df_domestic": np.exp(-0.02 * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
-            "df_foreign": np.exp(-0.015 * time_grid).reshape(1, -1).repeat(n_paths, axis=0),
+            "df_domestic": np.exp(-0.02 * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
+            "df_foreign": np.exp(-0.015 * time_grid)
+            .reshape(1, -1)
+            .repeat(n_paths, axis=0),
         }
 
-        buy_fwd = FXForward(notional_foreign=1e6, strike=1.10, maturity=1.0, buy_foreign=True)
-        sell_fwd = FXForward(notional_foreign=1e6, strike=1.10, maturity=1.0, buy_foreign=False)
+        buy_fwd = FXForward(
+            notional_foreign=1e6, strike=1.10, maturity=1.0, buy_foreign=True
+        )
+        sell_fwd = FXForward(
+            notional_foreign=1e6, strike=1.10, maturity=1.0, buy_foreign=False
+        )
 
         mtm_buy = buy_fwd.calculate_mtm(2, time_grid, paths_data)
         mtm_sell = sell_fwd.calculate_mtm(2, time_grid, paths_data)

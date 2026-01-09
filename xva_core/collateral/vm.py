@@ -46,9 +46,7 @@ class VariationMargin:
     def __post_init__(self) -> None:
         """Validate parameters."""
         if self.threshold < 0:
-            raise ValueError(
-                f"Threshold must be non-negative, got {self.threshold}"
-            )
+            raise ValueError(f"Threshold must be non-negative, got {self.threshold}")
         if self.mta < 0:
             raise ValueError(f"MTA must be non-negative, got {self.mta}")
         if self.mpr_days < 0:

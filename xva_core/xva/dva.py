@@ -49,7 +49,9 @@ class DVACalculator:
         if not 0 <= self.lgd <= 1:
             raise ValueError(f"LGD must be in [0, 1], got {self.lgd}")
         if self.hazard_rate < 0:
-            raise ValueError(f"Hazard rate must be non-negative, got {self.hazard_rate}")
+            raise ValueError(
+                f"Hazard rate must be non-negative, got {self.hazard_rate}"
+            )
 
     @property
     def hazard_curve(self) -> HazardCurve:

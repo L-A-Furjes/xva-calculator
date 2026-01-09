@@ -77,7 +77,9 @@ st.markdown(
 
 def main() -> None:
     """Main application entry point."""
-    st.markdown('<p class="main-header">📊 xVA Calculation Engine</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="main-header">📊 xVA Calculation Engine</p>', unsafe_allow_html=True
+    )
     st.markdown(
         """
         *Production-grade counterparty credit risk and valuation adjustments*
@@ -128,34 +130,54 @@ def build_sidebar() -> dict:
         with st.expander("🎲 Monte Carlo", expanded=True):
             config["n_paths"] = st.slider("Number of Paths", 100, 10000, 5000, step=100)
             config["horizon"] = st.slider("Horizon (years)", 1, 10, 5)
-            config["freq"] = st.selectbox("Time Step", ["Quarterly", "Monthly"], index=0)
+            config["freq"] = st.selectbox(
+                "Time Step", ["Quarterly", "Monthly"], index=0
+            )
             config["seed"] = st.number_input("Random Seed", value=42, step=1)
 
         # Market models
         with st.expander("📈 Market Models"):
             st.subheader("Domestic Rates (OU)")
-            config["kappa_d"] = st.slider("Mean Reversion κ", 0.01, 0.50, 0.10, key="kappa_d")
-            config["theta_d"] = st.slider("Long-term θ (%)", 0.0, 5.0, 2.0, key="theta_d") / 100
-            config["sigma_d"] = st.slider("Volatility σ (bps)", 10, 200, 100, key="sigma_d") / 10000
+            config["kappa_d"] = st.slider(
+                "Mean Reversion κ", 0.01, 0.50, 0.10, key="kappa_d"
+            )
+            config["theta_d"] = (
+                st.slider("Long-term θ (%)", 0.0, 5.0, 2.0, key="theta_d") / 100
+            )
+            config["sigma_d"] = (
+                st.slider("Volatility σ (bps)", 10, 200, 100, key="sigma_d") / 10000
+            )
 
             st.subheader("Foreign Rates (OU)")
-            config["kappa_f"] = st.slider("Mean Reversion κ", 0.01, 0.50, 0.08, key="kappa_f")
-            config["theta_f"] = st.slider("Long-term θ (%)", 0.0, 5.0, 1.5, key="theta_f") / 100
-            config["sigma_f"] = st.slider("Volatility σ (bps)", 10, 200, 120, key="sigma_f") / 10000
+            config["kappa_f"] = st.slider(
+                "Mean Reversion κ", 0.01, 0.50, 0.08, key="kappa_f"
+            )
+            config["theta_f"] = (
+                st.slider("Long-term θ (%)", 0.0, 5.0, 1.5, key="theta_f") / 100
+            )
+            config["sigma_f"] = (
+                st.slider("Volatility σ (bps)", 10, 200, 120, key="sigma_f") / 10000
+            )
 
             st.subheader("FX Model (GBM)")
-            config["fx_spot"] = st.number_input("Initial Spot", value=1.10, format="%.4f")
+            config["fx_spot"] = st.number_input(
+                "Initial Spot", value=1.10, format="%.4f"
+            )
             config["fx_vol"] = st.slider("Volatility (%)", 5, 30, 12) / 100
 
         # Correlations
         with st.expander("🔗 Correlations"):
-            config["corr_df"] = st.slider("Domestic-Foreign", -1.0, 1.0, 0.7, key="corr_df")
+            config["corr_df"] = st.slider(
+                "Domestic-Foreign", -1.0, 1.0, 0.7, key="corr_df"
+            )
             config["corr_dx"] = st.slider("Domestic-FX", -1.0, 1.0, -0.3, key="corr_dx")
             config["corr_fx"] = st.slider("Foreign-FX", -1.0, 1.0, 0.4, key="corr_fx")
 
         # Collateral
         with st.expander("🏦 Collateral"):
-            config["threshold"] = st.number_input("Threshold ($M)", value=1.0, step=0.1) * 1e6
+            config["threshold"] = (
+                st.number_input("Threshold ($M)", value=1.0, step=0.1) * 1e6
+            )
             config["mta"] = st.number_input("MTA ($K)", value=100.0, step=10.0) * 1e3
             config["mpr_days"] = st.slider("MPR (days)", 0, 20, 10)
             config["im_mult"] = st.slider("IM Multiplier", 1.0, 3.0, 1.5)
@@ -164,9 +186,13 @@ def build_sidebar() -> dict:
         with st.expander("💰 Credit & Funding"):
             config["lgd_cpty"] = st.slider("LGD Counterparty (%)", 0, 100, 60) / 100
             config["lgd_own"] = st.slider("LGD Own (%)", 0, 100, 60) / 100
-            config["lambda_cpty"] = st.slider("λ Counterparty (bps)", 0, 500, 120) / 10000
+            config["lambda_cpty"] = (
+                st.slider("λ Counterparty (bps)", 0, 500, 120) / 10000
+            )
             config["lambda_own"] = st.slider("λ Own (bps)", 0, 500, 100) / 10000
-            config["funding_spread"] = st.slider("Funding Spread (bps)", 0, 300, 100) / 10000
+            config["funding_spread"] = (
+                st.slider("Funding Spread (bps)", 0, 300, 100) / 10000
+            )
             config["coc"] = st.slider("Cost of Capital (%)", 5, 20, 10) / 100
             config["capital_ratio"] = st.slider("Capital Ratio (%)", 4, 15, 8) / 100
 

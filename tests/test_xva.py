@@ -214,7 +214,11 @@ class TestCalculateAllXVA:
         params_high = XVAParams(lgd_counterparty=0.8, hazard_rate_counterparty=0.02)
         params_low = XVAParams(lgd_counterparty=0.4, hazard_rate_counterparty=0.01)
 
-        result_high = calculate_all_xva(epe, ene, sample_discount_factors, time_grid, params_high)
-        result_low = calculate_all_xva(epe, ene, sample_discount_factors, time_grid, params_low)
+        result_high = calculate_all_xva(
+            epe, ene, sample_discount_factors, time_grid, params_high
+        )
+        result_low = calculate_all_xva(
+            epe, ene, sample_discount_factors, time_grid, params_low
+        )
 
         assert result_high.cva > result_low.cva

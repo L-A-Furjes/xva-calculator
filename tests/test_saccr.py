@@ -50,7 +50,9 @@ class TestSACCRCalculator:
         current_mtm = 2e6
         collateral = 1e6
 
-        result_no_coll = calc.calculate([sample_swap], current_mtm=current_mtm, collateral=0)
+        result_no_coll = calc.calculate(
+            [sample_swap], current_mtm=current_mtm, collateral=0
+        )
         result_coll = calc.calculate(
             [sample_swap], current_mtm=current_mtm, collateral=collateral
         )

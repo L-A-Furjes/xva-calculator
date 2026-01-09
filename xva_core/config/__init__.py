@@ -5,7 +5,11 @@ Provides Pydantic-validated configuration models and YAML loading utilities
 for market data, simulation parameters, and portfolio specifications.
 """
 
-from xva_core.config.loader import load_config, load_market_config, load_portfolio_config
+from xva_core.config.loader import (
+    load_config,
+    load_market_config,
+    load_portfolio_config,
+)
 from xva_core.config.models import (
     CollateralConfig,
     CorrelationConfig,

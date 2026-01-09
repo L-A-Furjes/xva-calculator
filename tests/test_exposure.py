@@ -77,7 +77,9 @@ class TestNettingSet:
     ) -> None:
         """Max maturity should be the longest trade."""
         ns = NettingSet(instruments=[sample_swap, sample_receiver_swap])
-        assert ns.max_maturity == max(sample_swap.maturity, sample_receiver_swap.maturity)
+        assert ns.max_maturity == max(
+            sample_swap.maturity, sample_receiver_swap.maturity
+        )
 
     def test_empty_netting_set(self) -> None:
         """Empty netting set should have zero notional."""
