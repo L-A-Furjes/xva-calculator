@@ -90,8 +90,15 @@ def main() -> None:
     config = build_sidebar()
 
     # Main content tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["📋 Portfolio", "📊 Exposure", "💸 xVA", "🏛️ SA-CCR", "💾 Export"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        [
+            "📋 Portfolio",
+            "📊 Exposure",
+            "💸 xVA",
+            "🏛️ SA-CCR",
+            "📈 Calibration",
+            "💾 Export",
+        ]
     )
 
     with tab1:
@@ -107,6 +114,9 @@ def main() -> None:
         saccr_tab(config)
 
     with tab5:
+        calibration_tab(config)
+
+    with tab6:
         export_tab(config)
 
 
@@ -676,6 +686,218 @@ def saccr_tab(config: dict) -> None:
         st.metric("Internal Avg EPE", f"${avg_epe/1e6:.2f}M")
     with col3:
         st.metric("EAD/EPE Ratio", f"{ratio:.2f}×")
+
+
+def calibration_tab(config: dict) -> None:
+    """Historical data calibration tab."""
+    st.header("📈 Volatility Calibration")
+
+    st.markdown(
+        """
+        Upload historical data to calculate volatility parameters for the models.
+        The app will compute **annualized volatility** from log returns.
+        """
+    )
+
+    # Initialize session state for calibrated values
+    if "calibrated_vols" not in st.session_state:
+        st.session_state.calibrated_vols = {}
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("📊 Interest Rates")
+        st.markdown("Upload CSV with columns: `date`, `rate` (in %)")
+
+        ir_file = st.file_uploader(
+            "Upload IR historical data",
+            type=["csv"],
+            key="ir_upload",
+            help="CSV with date and rate columns",
+        )
+
+        if ir_file is not None:
+            try:
+                ir_df = pd.read_csv(ir_file, parse_dates=["date"])
+                ir_df = ir_df.sort_values("date")
+
+                st.dataframe(ir_df.head(10), use_container_width=True)
+
+                # Calculate volatility
+                window = st.slider(
+                    "Rolling Window (days)", 20, 252, 60, key="ir_window"
+                )
+
+                # For rates, use absolute changes (not log returns)
+                ir_df["change"] = ir_df["rate"].diff()
+                ir_df["rolling_vol"] = ir_df["change"].rolling(window).std()
+
+                # Annualize (assuming daily data, 252 trading days)
+                annualized_vol = (
+                    ir_df["rolling_vol"].iloc[-1] * np.sqrt(252) / 100
+                )  # Convert to decimal
+
+                st.metric(
+                    "Calibrated IR Volatility",
+                    f"{annualized_vol*10000:.0f} bps",
+                    help="Annualized volatility in basis points",
+                )
+
+                # Plot
+                try:
+                    import plotly.graph_objects as go
+
+                    fig = go.Figure()
+                    fig.add_trace(
+                        go.Scatter(
+                            x=ir_df["date"],
+                            y=ir_df["rolling_vol"] * np.sqrt(252),
+                            name="Rolling Vol (ann.)",
+                            line={"color": "#FF4B4B"},
+                        )
+                    )
+                    fig.update_layout(
+                        title="Rolling IR Volatility",
+                        xaxis_title="Date",
+                        yaxis_title="Volatility (%)",
+                        template="plotly_dark",
+                        height=300,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except ImportError:
+                    pass
+
+                st.session_state.calibrated_vols["ir"] = annualized_vol
+
+                if st.button("Apply IR Vol to Model", key="apply_ir"):
+                    st.success(f"IR volatility set to {annualized_vol*10000:.0f} bps")
+
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+
+    with col2:
+        st.subheader("💱 FX Rates")
+        st.markdown("Upload CSV with columns: `date`, `rate` (spot price)")
+
+        fx_file = st.file_uploader(
+            "Upload FX historical data",
+            type=["csv"],
+            key="fx_upload",
+            help="CSV with date and rate columns",
+        )
+
+        if fx_file is not None:
+            try:
+                fx_df = pd.read_csv(fx_file, parse_dates=["date"])
+                fx_df = fx_df.sort_values("date")
+
+                st.dataframe(fx_df.head(10), use_container_width=True)
+
+                # Calculate volatility
+                window = st.slider(
+                    "Rolling Window (days)", 20, 252, 60, key="fx_window"
+                )
+
+                # Log returns for FX
+                fx_df["log_return"] = np.log(fx_df["rate"] / fx_df["rate"].shift(1))
+                fx_df["rolling_vol"] = fx_df["log_return"].rolling(window).std()
+
+                # Annualize
+                annualized_vol = fx_df["rolling_vol"].iloc[-1] * np.sqrt(252)
+
+                st.metric(
+                    "Calibrated FX Volatility",
+                    f"{annualized_vol*100:.1f}%",
+                    help="Annualized volatility",
+                )
+
+                # Plot
+                try:
+                    import plotly.graph_objects as go
+
+                    fig = go.Figure()
+                    fig.add_trace(
+                        go.Scatter(
+                            x=fx_df["date"],
+                            y=fx_df["rolling_vol"] * np.sqrt(252) * 100,
+                            name="Rolling Vol (ann.)",
+                            line={"color": "#00CC96"},
+                        )
+                    )
+                    fig.update_layout(
+                        title="Rolling FX Volatility",
+                        xaxis_title="Date",
+                        yaxis_title="Volatility (%)",
+                        template="plotly_dark",
+                        height=300,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                except ImportError:
+                    pass
+
+                st.session_state.calibrated_vols["fx"] = annualized_vol
+
+                if st.button("Apply FX Vol to Model", key="apply_fx"):
+                    st.success(f"FX volatility set to {annualized_vol*100:.1f}%")
+
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+
+    # Sample data download
+    st.divider()
+    st.subheader("📥 Sample Data Templates")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Generate sample IR data
+        dates = pd.date_range("2023-01-01", periods=252, freq="B")
+        rates = 2.0 + np.cumsum(np.random.randn(252) * 0.05)
+        sample_ir = pd.DataFrame({"date": dates, "rate": rates})
+
+        st.download_button(
+            "📥 Sample IR Data (CSV)",
+            sample_ir.to_csv(index=False),
+            "sample_ir_data.csv",
+            "text/csv",
+        )
+
+    with col2:
+        # Generate sample FX data
+        dates = pd.date_range("2023-01-01", periods=252, freq="B")
+        fx_rates = 1.10 * np.exp(np.cumsum(np.random.randn(252) * 0.01))
+        sample_fx = pd.DataFrame({"date": dates, "rate": fx_rates})
+
+        st.download_button(
+            "📥 Sample FX Data (CSV)",
+            sample_fx.to_csv(index=False),
+            "sample_fx_data.csv",
+            "text/csv",
+        )
+
+    # Show calibrated values
+    if st.session_state.calibrated_vols:
+        st.divider()
+        st.subheader("✅ Calibrated Parameters")
+        calib_data = []
+        if "ir" in st.session_state.calibrated_vols:
+            calib_data.append(
+                {
+                    "Parameter": "IR Volatility (σ)",
+                    "Calibrated Value": f"{st.session_state.calibrated_vols['ir']*10000:.0f} bps",
+                    "Model Default": f"{config.get('sigma_d', 0.01)*10000:.0f} bps",
+                }
+            )
+        if "fx" in st.session_state.calibrated_vols:
+            calib_data.append(
+                {
+                    "Parameter": "FX Volatility (σ)",
+                    "Calibrated Value": f"{st.session_state.calibrated_vols['fx']*100:.1f}%",
+                    "Model Default": f"{config.get('fx_vol', 0.12)*100:.0f}%",
+                }
+            )
+        if calib_data:
+            st.dataframe(pd.DataFrame(calib_data), use_container_width=True)
 
 
 def export_tab(config: dict) -> None:
