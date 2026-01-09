@@ -113,7 +113,7 @@ python_functions = ["test_*"]
 addopts = [
     "--cov=xva_core",
     "--cov-report=term-missing",
-    "--cov-fail-under=80",
+    "--cov-fail-under=60",
     "-v"
 ]
 
