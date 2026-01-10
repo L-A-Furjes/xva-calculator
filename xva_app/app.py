@@ -1195,7 +1195,7 @@ def _calibration_cds_section(config: dict) -> None:
                             yaxis_title="CDS Spread (bps)",
                             template="plotly_dark",
                             height=350,
-                            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                            legend={"orientation": "h", "yanchor": "bottom", "y": 1.02},
                         )
                         st.plotly_chart(fig, use_container_width=True)
                     except ImportError:
@@ -1224,7 +1224,6 @@ def _calibration_cds_section(config: dict) -> None:
 
                     final_spread = cds_df["spread_bps"].iloc[-1]
                     final_hazard = cds_df["hazard_rate"].iloc[-1]
-                    avg_spread = cds_df["spread_bps"].mean()
 
                     # Plot
                     try:
@@ -1427,7 +1426,7 @@ def _calibration_correlation_section(config: dict) -> None:
                 key="manual_corr_dx",
             )
         with col2:
-            manual_corr_df = st.slider(
+            _manual_corr_df = st.slider(
                 "Domestic ↔ Foreign Rate",
                 -1.0,
                 1.0,
@@ -1435,7 +1434,7 @@ def _calibration_correlation_section(config: dict) -> None:
                 key="manual_corr_df",
             )
         with col3:
-            manual_corr_fx_f = st.slider(
+            _manual_corr_fx_f = st.slider(
                 "Foreign Rate ↔ FX",
                 -1.0,
                 1.0,
@@ -1543,12 +1542,12 @@ def _calibration_correlation_section(config: dict) -> None:
                 x=merged_clean["ir_change"] / merged_clean["ir_change"].std(),
                 y=merged_clean["log_return"] / merged_clean["log_return"].std(),
                 mode="markers",
-                marker=dict(
-                    size=5,
-                    color=np.arange(len(merged_clean)),
-                    colorscale="Viridis",
-                    opacity=0.6,
-                ),
+                marker={
+                    "size": 5,
+                    "color": np.arange(len(merged_clean)),
+                    "colorscale": "Viridis",
+                    "opacity": 0.6,
+                },
                 name="Returns",
             ),
             row=1,
