@@ -783,7 +783,9 @@ def _calibration_volatility_section(config: dict) -> None:
 
                 with st.expander("Preview Data", expanded=False):
                     st.dataframe(ir_df.head(10), use_container_width=True)
-                    st.caption(f"Detected format: {rate_format} | {len(ir_df)} observations")
+                    st.caption(
+                        f"Detected format: {rate_format} | {len(ir_df)} observations"
+                    )
 
                 # Calculate volatility
                 window = st.slider(
@@ -844,7 +846,8 @@ def _calibration_volatility_section(config: dict) -> None:
                     from plotly.subplots import make_subplots
 
                     fig = make_subplots(
-                        rows=2, cols=1,
+                        rows=2,
+                        cols=1,
                         subplot_titles=("Historical Rates", "Rolling Volatility"),
                         vertical_spacing=0.12,
                     )
@@ -856,7 +859,8 @@ def _calibration_volatility_section(config: dict) -> None:
                             name="Rate (%)",
                             line={"color": "#1f77b4"},
                         ),
-                        row=1, col=1,
+                        row=1,
+                        col=1,
                     )
 
                     fig.add_trace(
@@ -866,7 +870,8 @@ def _calibration_volatility_section(config: dict) -> None:
                             name="Rolling Vol (bps)",
                             line={"color": "#FF4B4B"},
                         ),
-                        row=2, col=1,
+                        row=2,
+                        col=1,
                     )
 
                     fig.update_layout(
@@ -885,7 +890,9 @@ def _calibration_volatility_section(config: dict) -> None:
                 st.session_state.calibrated_params["ir_vol"] = annualized_vol
                 st.session_state.calibrated_params["ir_kappa"] = kappa_estimate
                 st.session_state.calibrated_params["ir_theta"] = theta_estimate
-                st.session_state.calibrated_params["ir_data"] = ir_df[["date", "rate_decimal"]].copy()
+                st.session_state.calibrated_params["ir_data"] = ir_df[
+                    ["date", "rate_decimal"]
+                ].copy()
 
                 if st.button("✅ Apply IR Parameters", key="apply_ir", type="primary"):
                     st.success(
@@ -960,7 +967,8 @@ def _calibration_volatility_section(config: dict) -> None:
                     from plotly.subplots import make_subplots
 
                     fig = make_subplots(
-                        rows=2, cols=1,
+                        rows=2,
+                        cols=1,
                         subplot_titles=("FX Spot Price", "Rolling Volatility"),
                         vertical_spacing=0.12,
                     )
@@ -972,7 +980,8 @@ def _calibration_volatility_section(config: dict) -> None:
                             name="Spot",
                             line={"color": "#00CC96"},
                         ),
-                        row=1, col=1,
+                        row=1,
+                        col=1,
                     )
 
                     fig.add_trace(
@@ -982,7 +991,8 @@ def _calibration_volatility_section(config: dict) -> None:
                             name="Rolling Vol (%)",
                             line={"color": "#FFA500"},
                         ),
-                        row=2, col=1,
+                        row=2,
+                        col=1,
                     )
 
                     fig.update_layout(
@@ -1000,7 +1010,9 @@ def _calibration_volatility_section(config: dict) -> None:
                 # Store calibrated values
                 st.session_state.calibrated_params["fx_vol"] = annualized_vol
                 st.session_state.calibrated_params["fx_spot"] = current_spot
-                st.session_state.calibrated_params["fx_data"] = fx_df[["date", "rate", "log_return"]].copy()
+                st.session_state.calibrated_params["fx_data"] = fx_df[
+                    ["date", "rate", "log_return"]
+                ].copy()
 
                 if st.button("✅ Apply FX Parameters", key="apply_fx", type="primary"):
                     st.success(
@@ -1088,9 +1100,12 @@ def _calibration_cds_section(config: dict) -> None:
                     st.dataframe(cds_df.head(10), use_container_width=True)
 
                 # Detect format (single vs multi-tenor)
-                tenor_cols = [c for c in cds_df.columns if c not in ["date", "spread_bps"]]
+                tenor_cols = [
+                    c for c in cds_df.columns if c not in ["date", "spread_bps"]
+                ]
                 is_multi_tenor = len(tenor_cols) > 0 and any(
-                    t in str(tenor_cols) for t in ["1Y", "3Y", "5Y", "10Y", "1y", "3y", "5y", "10y"]
+                    t in str(tenor_cols)
+                    for t in ["1Y", "3Y", "5Y", "10Y", "1y", "3y", "5y", "10y"]
                 )
 
                 # LGD input for conversion
@@ -1122,7 +1137,9 @@ def _calibration_cds_section(config: dict) -> None:
                             tenor_map[col] = "10Y"
 
                     cds_df = cds_df.rename(columns=tenor_map)
-                    tenor_cols = [c for c in ["1Y", "3Y", "5Y", "10Y"] if c in cds_df.columns]
+                    tenor_cols = [
+                        c for c in ["1Y", "3Y", "5Y", "10Y"] if c in cds_df.columns
+                    ]
 
                     # Latest spreads and hazard rates
                     latest = cds_df.iloc[-1]
@@ -1130,22 +1147,26 @@ def _calibration_cds_section(config: dict) -> None:
                     for tenor in tenor_cols:
                         spread_bps = latest[tenor]
                         hazard = (spread_bps / 10000) / recovery
-                        term_structure.append({
-                            "Tenor": tenor,
-                            "CDS Spread (bps)": spread_bps,
-                            "Hazard Rate (λ)": f"{hazard*100:.2f}%",
-                            "λ (decimal)": hazard,
-                        })
+                        term_structure.append(
+                            {
+                                "Tenor": tenor,
+                                "CDS Spread (bps)": spread_bps,
+                                "Hazard Rate (λ)": f"{hazard*100:.2f}%",
+                                "λ (decimal)": hazard,
+                            }
+                        )
 
                     term_df = pd.DataFrame(term_structure)
-                    st.dataframe(term_df[["Tenor", "CDS Spread (bps)", "Hazard Rate (λ)"]],
-                                use_container_width=True)
+                    st.dataframe(
+                        term_df[["Tenor", "CDS Spread (bps)", "Hazard Rate (λ)"]],
+                        use_container_width=True,
+                    )
 
                     # Select which tenor to use
                     selected_tenor = st.selectbox(
                         "Select tenor for hazard rate",
                         tenor_cols,
-                        index=min(2, len(tenor_cols)-1),  # Default to 5Y if available
+                        index=min(2, len(tenor_cols) - 1),  # Default to 5Y if available
                         key="cds_tenor_select",
                     )
 
@@ -1187,7 +1208,11 @@ def _calibration_cds_section(config: dict) -> None:
                     # Single tenor format
                     if "spread_bps" not in cds_df.columns:
                         # Try to find the spread column
-                        spread_cols = [c for c in cds_df.columns if "spread" in c.lower() or "cds" in c.lower()]
+                        spread_cols = [
+                            c
+                            for c in cds_df.columns
+                            if "spread" in c.lower() or "cds" in c.lower()
+                        ]
                         if spread_cols:
                             cds_df["spread_bps"] = cds_df[spread_cols[0]]
                         else:
@@ -1207,7 +1232,8 @@ def _calibration_cds_section(config: dict) -> None:
                         from plotly.subplots import make_subplots
 
                         fig = make_subplots(
-                            rows=2, cols=1,
+                            rows=2,
+                            cols=1,
                             subplot_titles=("CDS Spread", "Implied Hazard Rate"),
                             vertical_spacing=0.12,
                         )
@@ -1221,7 +1247,8 @@ def _calibration_cds_section(config: dict) -> None:
                                 fill="tozeroy",
                                 fillcolor="rgba(255, 107, 107, 0.2)",
                             ),
-                            row=1, col=1,
+                            row=1,
+                            col=1,
                         )
 
                         fig.add_trace(
@@ -1231,7 +1258,8 @@ def _calibration_cds_section(config: dict) -> None:
                                 name="Hazard Rate",
                                 line={"color": "#4ECDC4"},
                             ),
-                            row=2, col=1,
+                            row=2,
+                            col=1,
                         )
 
                         fig.update_layout(
@@ -1273,7 +1301,9 @@ def _calibration_cds_section(config: dict) -> None:
                 st.session_state.calibrated_params["hazard_rate"] = final_hazard
                 st.session_state.calibrated_params["cds_spread"] = final_spread
 
-                if st.button("✅ Apply Hazard Rate to CVA/DVA", key="apply_cds", type="primary"):
+                if st.button(
+                    "✅ Apply Hazard Rate to CVA/DVA", key="apply_cds", type="primary"
+                ):
                     st.success(
                         f"Applied: λ = {final_hazard*100:.2f}% "
                         f"(from CDS = {final_spread:.0f} bps, LGD = {lgd*100:.0f}%)"
@@ -1328,13 +1358,15 @@ def _calibration_cds_section(config: dict) -> None:
         )
 
         # Multi-tenor sample
-        sample_cds_multi = pd.DataFrame({
-            "date": dates,
-            "1Y": 80 + np.cumsum(np.random.randn(252) * 1.5),
-            "3Y": 100 + np.cumsum(np.random.randn(252) * 1.8),
-            "5Y": 120 + np.cumsum(np.random.randn(252) * 2.0),
-            "10Y": 140 + np.cumsum(np.random.randn(252) * 2.2),
-        })
+        sample_cds_multi = pd.DataFrame(
+            {
+                "date": dates,
+                "1Y": 80 + np.cumsum(np.random.randn(252) * 1.5),
+                "3Y": 100 + np.cumsum(np.random.randn(252) * 1.8),
+                "5Y": 120 + np.cumsum(np.random.randn(252) * 2.0),
+                "10Y": 140 + np.cumsum(np.random.randn(252) * 2.2),
+            }
+        )
         # Ensure positive values
         for col in ["1Y", "3Y", "5Y", "10Y"]:
             sample_cds_multi[col] = np.maximum(sample_cds_multi[col], 15)
@@ -1381,27 +1413,32 @@ def _calibration_correlation_section(config: dict) -> None:
         # Manual correlation input as fallback
         st.divider()
         st.markdown("### Manual Correlation Input")
-        st.markdown("Alternatively, enter correlations manually if you have them from another source:")
+        st.markdown(
+            "Alternatively, enter correlations manually if you have them from another source:"
+        )
 
         col1, col2, col3 = st.columns(3)
         with col1:
             manual_corr_ir_fx = st.slider(
                 "Domestic Rate ↔ FX",
-                -1.0, 1.0,
+                -1.0,
+                1.0,
                 config.get("corr_dx", -0.30),
                 key="manual_corr_dx",
             )
         with col2:
             manual_corr_df = st.slider(
                 "Domestic ↔ Foreign Rate",
-                -1.0, 1.0,
+                -1.0,
+                1.0,
                 config.get("corr_df", 0.70),
                 key="manual_corr_df",
             )
         with col3:
             manual_corr_fx_f = st.slider(
                 "Foreign Rate ↔ FX",
-                -1.0, 1.0,
+                -1.0,
+                1.0,
                 config.get("corr_fx", 0.40),
                 key="manual_corr_fx",
             )
@@ -1456,9 +1493,7 @@ def _calibration_correlation_section(config: dict) -> None:
     )
 
     merged_clean["rolling_corr"] = (
-        merged_clean["ir_change"]
-        .rolling(window)
-        .corr(merged_clean["log_return"])
+        merged_clean["ir_change"].rolling(window).corr(merged_clean["log_return"])
     )
 
     # Overall correlation
@@ -1493,10 +1528,11 @@ def _calibration_correlation_section(config: dict) -> None:
         from plotly.subplots import make_subplots
 
         fig = make_subplots(
-            rows=2, cols=1,
+            rows=2,
+            cols=1,
             subplot_titles=(
                 "Normalized IR Changes vs FX Returns",
-                f"Rolling {window}-Day Correlation"
+                f"Rolling {window}-Day Correlation",
             ),
             vertical_spacing=0.15,
         )
@@ -1515,7 +1551,8 @@ def _calibration_correlation_section(config: dict) -> None:
                 ),
                 name="Returns",
             ),
-            row=1, col=1,
+            row=1,
+            col=1,
         )
 
         # Rolling correlation
@@ -1526,7 +1563,8 @@ def _calibration_correlation_section(config: dict) -> None:
                 name="Rolling Corr",
                 line={"color": "#9467BD", "width": 2},
             ),
-            row=2, col=1,
+            row=2,
+            col=1,
         )
 
         # Add zero line
@@ -1538,7 +1576,8 @@ def _calibration_correlation_section(config: dict) -> None:
             line_dash="dot",
             line_color="#FF4B4B",
             annotation_text=f"Overall: {overall_corr:.2f}",
-            row=2, col=1,
+            row=2,
+            col=1,
         )
 
         fig.update_layout(
@@ -1569,7 +1608,9 @@ def _calibration_correlation_section(config: dict) -> None:
     )
 
     st.dataframe(
-        corr_matrix.style.format("{:.3f}").background_gradient(cmap="RdBu_r", vmin=-1, vmax=1),
+        corr_matrix.style.format("{:.3f}").background_gradient(
+            cmap="RdBu_r", vmin=-1, vmax=1
+        ),
         use_container_width=True,
     )
 
@@ -1614,7 +1655,9 @@ def _calibration_summary_section(config: dict) -> None:
         return
 
     # Progress indicator
-    st.progress(calibrated_count / 4, text=f"{calibrated_count}/4 parameter sets calibrated")
+    st.progress(
+        calibrated_count / 4, text=f"{calibrated_count}/4 parameter sets calibrated"
+    )
 
     # Summary table
     st.markdown("### 📋 Calibrated Parameters")
@@ -1623,109 +1666,125 @@ def _calibration_summary_section(config: dict) -> None:
 
     # IR Parameters
     if has_ir:
-        summary_data.extend([
-            {
-                "Category": "Interest Rate",
-                "Parameter": "Volatility (σ)",
-                "Calibrated": f"{params['ir_vol']*10000:.0f} bps",
-                "Model Default": f"{config.get('sigma_d', 0.01)*10000:.0f} bps",
-                "Status": "✅",
-            },
-            {
-                "Category": "Interest Rate",
-                "Parameter": "Mean Reversion (κ)",
-                "Calibrated": f"{params.get('ir_kappa', 0.1):.2f}",
-                "Model Default": f"{config.get('kappa_d', 0.10):.2f}",
-                "Status": "✅",
-            },
-            {
-                "Category": "Interest Rate",
-                "Parameter": "Long-term Mean (θ)",
-                "Calibrated": f"{params.get('ir_theta', 0.02)*100:.2f}%",
-                "Model Default": f"{config.get('theta_d', 0.02)*100:.2f}%",
-                "Status": "✅",
-            },
-        ])
+        summary_data.extend(
+            [
+                {
+                    "Category": "Interest Rate",
+                    "Parameter": "Volatility (σ)",
+                    "Calibrated": f"{params['ir_vol']*10000:.0f} bps",
+                    "Model Default": f"{config.get('sigma_d', 0.01)*10000:.0f} bps",
+                    "Status": "✅",
+                },
+                {
+                    "Category": "Interest Rate",
+                    "Parameter": "Mean Reversion (κ)",
+                    "Calibrated": f"{params.get('ir_kappa', 0.1):.2f}",
+                    "Model Default": f"{config.get('kappa_d', 0.10):.2f}",
+                    "Status": "✅",
+                },
+                {
+                    "Category": "Interest Rate",
+                    "Parameter": "Long-term Mean (θ)",
+                    "Calibrated": f"{params.get('ir_theta', 0.02)*100:.2f}%",
+                    "Model Default": f"{config.get('theta_d', 0.02)*100:.2f}%",
+                    "Status": "✅",
+                },
+            ]
+        )
     else:
-        summary_data.append({
-            "Category": "Interest Rate",
-            "Parameter": "All parameters",
-            "Calibrated": "—",
-            "Model Default": "Using defaults",
-            "Status": "⏳",
-        })
+        summary_data.append(
+            {
+                "Category": "Interest Rate",
+                "Parameter": "All parameters",
+                "Calibrated": "—",
+                "Model Default": "Using defaults",
+                "Status": "⏳",
+            }
+        )
 
     # FX Parameters
     if has_fx:
-        summary_data.extend([
-            {
-                "Category": "FX",
-                "Parameter": "Volatility (σ)",
-                "Calibrated": f"{params['fx_vol']*100:.1f}%",
-                "Model Default": f"{config.get('fx_vol', 0.12)*100:.0f}%",
-                "Status": "✅",
-            },
-            {
-                "Category": "FX",
-                "Parameter": "Spot Rate",
-                "Calibrated": f"{params.get('fx_spot', 1.10):.4f}",
-                "Model Default": f"{config.get('fx_spot', 1.10):.4f}",
-                "Status": "✅",
-            },
-        ])
+        summary_data.extend(
+            [
+                {
+                    "Category": "FX",
+                    "Parameter": "Volatility (σ)",
+                    "Calibrated": f"{params['fx_vol']*100:.1f}%",
+                    "Model Default": f"{config.get('fx_vol', 0.12)*100:.0f}%",
+                    "Status": "✅",
+                },
+                {
+                    "Category": "FX",
+                    "Parameter": "Spot Rate",
+                    "Calibrated": f"{params.get('fx_spot', 1.10):.4f}",
+                    "Model Default": f"{config.get('fx_spot', 1.10):.4f}",
+                    "Status": "✅",
+                },
+            ]
+        )
     else:
-        summary_data.append({
-            "Category": "FX",
-            "Parameter": "All parameters",
-            "Calibrated": "—",
-            "Model Default": "Using defaults",
-            "Status": "⏳",
-        })
+        summary_data.append(
+            {
+                "Category": "FX",
+                "Parameter": "All parameters",
+                "Calibrated": "—",
+                "Model Default": "Using defaults",
+                "Status": "⏳",
+            }
+        )
 
     # Credit Parameters
     if has_cds:
-        summary_data.extend([
-            {
-                "Category": "Credit",
-                "Parameter": "Hazard Rate (λ)",
-                "Calibrated": f"{params['hazard_rate']*100:.2f}%",
-                "Model Default": f"{config.get('lambda_cpty', 0.012)*100:.2f}%",
-                "Status": "✅",
-            },
-            {
-                "Category": "Credit",
-                "Parameter": "CDS Spread",
-                "Calibrated": f"{params.get('cds_spread', 120):.0f} bps",
-                "Model Default": "N/A",
-                "Status": "✅",
-            },
-        ])
+        summary_data.extend(
+            [
+                {
+                    "Category": "Credit",
+                    "Parameter": "Hazard Rate (λ)",
+                    "Calibrated": f"{params['hazard_rate']*100:.2f}%",
+                    "Model Default": f"{config.get('lambda_cpty', 0.012)*100:.2f}%",
+                    "Status": "✅",
+                },
+                {
+                    "Category": "Credit",
+                    "Parameter": "CDS Spread",
+                    "Calibrated": f"{params.get('cds_spread', 120):.0f} bps",
+                    "Model Default": "N/A",
+                    "Status": "✅",
+                },
+            ]
+        )
     else:
-        summary_data.append({
-            "Category": "Credit",
-            "Parameter": "Hazard Rate",
-            "Calibrated": "—",
-            "Model Default": f"{config.get('lambda_cpty', 0.012)*100:.2f}%",
-            "Status": "⏳",
-        })
+        summary_data.append(
+            {
+                "Category": "Credit",
+                "Parameter": "Hazard Rate",
+                "Calibrated": "—",
+                "Model Default": f"{config.get('lambda_cpty', 0.012)*100:.2f}%",
+                "Status": "⏳",
+            }
+        )
 
     # Correlation Parameters
     if has_corr:
-        summary_data.append({
-            "Category": "Correlation",
-            "Parameter": "ρ(IR, FX)",
-            "Calibrated": f"{params['correlation_ir_fx']:.3f}",
-            "Model Default": f"{config.get('corr_dx', -0.30):.2f}",
-            "Status": "✅",
-        })
+        summary_data.append(
+            {
+                "Category": "Correlation",
+                "Parameter": "ρ(IR, FX)",
+                "Calibrated": f"{params['correlation_ir_fx']:.3f}",
+                "Model Default": f"{config.get('corr_dx', -0.30):.2f}",
+                "Status": "✅",
+            }
+        )
     else:
-        summary_data.append({
-            "Category": "Correlation",
-            "Parameter": "ρ(IR, FX)",
-            "Calibrated": "—",
-            "Model Default": f"{config.get('corr_dx', -0.30):.2f}",
-            "Status": "⏳",
-        })
+        summary_data.append(
+            {
+                "Category": "Correlation",
+                "Parameter": "ρ(IR, FX)",
+                "Calibrated": "—",
+                "Model Default": f"{config.get('corr_dx', -0.30):.2f}",
+                "Status": "⏳",
+            }
+        )
 
     summary_df = pd.DataFrame(summary_data)
 
