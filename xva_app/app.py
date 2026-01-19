@@ -71,14 +71,12 @@ def main() -> None:
     st.markdown(
         '<p class="main-header">📊 xVA Calculation Engine</p>', unsafe_allow_html=True
     )
-    st.markdown(
-        """
+    st.markdown("""
         *Production-grade counterparty credit risk and valuation adjustments*
 
         This application calculates **CVA, DVA, FVA, MVA, KVA** for a portfolio
         of interest rate swaps and FX forwards using Monte Carlo simulation.
-        """
-    )
+        """)
 
     # Initialize session state
     if "results" not in st.session_state:
@@ -729,13 +727,11 @@ def saccr_tab(config: dict) -> None:
     r = st.session_state.results
     saccr = r["saccr_result"]
 
-    st.info(
-        """
+    st.info("""
         **SA-CCR**: Standardized Approach for Counterparty Credit Risk (Basel III)
 
         EAD = α × (RC + PFE), where α = 1.4
-        """
-    )
+        """)
 
     # Summary metrics
     col1, col2, col3, col4 = st.columns(4)
@@ -790,15 +786,13 @@ def calibration_tab(config: dict) -> None:
     """
     st.header("📈 Market Data Calibration")
 
-    st.markdown(
-        """
+    st.markdown("""
         Calibrate model parameters from historical market data. Upload CSV files
         from Bloomberg, Reuters, or any financial data provider to derive:
         - **Volatilities** for IR and FX models
         - **Hazard rates** from CDS spreads for CVA/DVA
         - **Correlations** between risk factors
-        """
-    )
+        """)
 
     # Initialize session state for calibrated values
     if "calibrated_params" not in st.session_state:
@@ -843,15 +837,13 @@ def _calibration_volatility_section(config: dict) -> None:
     """Volatility calibration for IR and FX."""
     st.subheader("Volatility Calibration")
 
-    st.info(
-        """
+    st.info("""
         **Methodology:**
         - **IR Volatility**: Calculated from absolute rate changes (OU model assumption)
         - **FX Volatility**: Calculated from log-returns (GBM model assumption)
 
         Both are annualized using √252 (trading days).
-        """
-    )
+        """)
 
     col1, col2 = st.columns(2)
 
@@ -1166,8 +1158,7 @@ def _calibration_cds_section(config: dict) -> None:
     """CDS spread to hazard rate calibration."""
     st.subheader("Credit Calibration from CDS Spreads")
 
-    st.info(
-        """
+    st.info("""
         **CDS → Hazard Rate Conversion:**
 
         The hazard rate (λ) represents the instantaneous probability of default.
@@ -1176,20 +1167,17 @@ def _calibration_cds_section(config: dict) -> None:
         $$\\lambda = \\frac{\\text{CDS Spread}}{1 - \\text{LGD}}$$
 
         **Example:** CDS = 120 bps, LGD = 60% → λ = 0.0120 / 0.40 = 3.0%
-        """
-    )
+        """)
 
     col1, col2 = st.columns([2, 1])
 
     with col1:
         st.markdown("### 💳 CDS Spread Data")
-        st.markdown(
-            """
+        st.markdown("""
             Upload CSV with CDS spreads. Supported formats:
             - **Single tenor:** `date`, `spread_bps`
             - **Multi-tenor:** `date`, `1Y`, `3Y`, `5Y`, `10Y` (spreads in bps)
-            """
-        )
+            """)
 
         cds_file = st.file_uploader(
             "Upload CDS spread data",
@@ -1421,8 +1409,7 @@ def _calibration_cds_section(config: dict) -> None:
 
     with col2:
         st.markdown("### ℹ️ CDS Basics")
-        st.markdown(
-            """
+        st.markdown("""
             **Credit Default Swap (CDS):**
 
             A CDS is insurance against default.
@@ -1443,8 +1430,7 @@ def _calibration_cds_section(config: dict) -> None:
             | BBB    | 100-200     |
             | BB     | 200-400     |
             | B      | 400-800     |
-            """
-        )
+            """)
 
         # Sample CDS data download
         st.divider()
@@ -1490,32 +1476,28 @@ def _calibration_correlation_section(config: dict) -> None:
     """Historical correlation calibration from IR and FX data."""
     st.subheader("Correlation Calibration")
 
-    st.info(
-        """
+    st.info("""
         **Automatic Correlation Calculation:**
 
         When you upload both IR and FX data in the Volatilities tab, the correlation
         between rate changes (ΔIR) and FX log-returns is computed automatically.
 
         $$\\rho_{IR,FX} = \\text{Corr}(\\Delta r_t, \\log(S_t/S_{t-1}))$$
-        """
-    )
+        """)
 
     # Check if both IR and FX data are available
     ir_data = st.session_state.calibrated_params.get("ir_data")
     fx_data = st.session_state.calibrated_params.get("fx_data")
 
     if ir_data is None or fx_data is None:
-        st.warning(
-            """
+        st.warning("""
             **Data Required:**
 
             Please upload both IR and FX historical data in the **Volatilities** tab
             to calculate correlations automatically.
 
             The correlation will be computed from overlapping dates.
-            """
-        )
+            """)
 
         # Manual correlation input as fallback
         st.divider()
@@ -1746,8 +1728,7 @@ def _calibration_ois_section(config: dict) -> None:
     """OIS curve calibration from market data."""
     st.subheader("OIS Discount Curve Calibration")
 
-    st.info(
-        """
+    st.info("""
         **OIS (Overnight Index Swap) Curve:**
 
         The OIS curve is the standard for risk-free discounting post-2008 crisis.
@@ -1758,20 +1739,17 @@ def _calibration_ois_section(config: dict) -> None:
 
         **Bootstrapping Method:**
         Extract zero rates from OIS swap rates using iterative bootstrapping.
-        """
-    )
+        """)
 
     col1, col2 = st.columns([2, 1])
 
     with col1:
         st.markdown("### 📈 OIS Swap Rate Data")
-        st.markdown(
-            """
+        st.markdown("""
             Upload CSV with OIS swap rates. Format:
             - **Columns:** `tenor`, `rate` (swap rate in % or decimal)
             - **Example tenors:** 1M, 3M, 6M, 1Y, 2Y, 5Y, 10Y
-            """
-        )
+            """)
 
         ois_file = st.file_uploader(
             "Upload OIS curve data",
@@ -1962,8 +1940,7 @@ def _calibration_ois_section(config: dict) -> None:
 
     with col2:
         st.markdown("### ℹ️ OIS Curve Basics")
-        st.markdown(
-            """
+        st.markdown("""
             **Why OIS for Discounting?**
 
             Post-2008 financial crisis, OIS
@@ -1991,8 +1968,7 @@ def _calibration_ois_section(config: dict) -> None:
 
             Where z(T) is the continuously
             compounded zero rate.
-            """
-        )
+            """)
 
         # Sample OIS data download
         st.divider()
@@ -2029,8 +2005,7 @@ def _calibration_summary_section(config: dict) -> None:
     calibrated_count = sum([has_ir, has_fx, has_cds, has_corr, has_ois])
 
     if calibrated_count == 0:
-        st.info(
-            """
+        st.info("""
             **No parameters calibrated yet.**
 
             Use the other tabs to calibrate:
@@ -2038,8 +2013,7 @@ def _calibration_summary_section(config: dict) -> None:
             - 💳 **CDS / Credit**: Upload CDS spreads
             - 🔗 **Correlations**: Computed automatically from IR/FX data
             - 📉 **OIS Curve**: Upload OIS swap rates
-            """
-        )
+            """)
         return
 
     # Progress indicator
@@ -2292,12 +2266,10 @@ def stress_test_tab(config: dict) -> None:
     """
     st.header("⚡ Stress Testing")
 
-    st.markdown(
-        """
+    st.markdown("""
         Apply market shocks to assess xVA sensitivity under stressed conditions.
         This is essential for risk management and regulatory compliance (FRTB, stress VaR).
-        """
-    )
+        """)
 
     if st.session_state.results is None:
         st.info(
@@ -2328,16 +2300,14 @@ def stress_test_tab(config: dict) -> None:
     # Stress scenario configuration
     st.subheader("⚙️ Stress Scenario Configuration")
 
-    st.info(
-        """
+    st.info("""
         **Common Stress Scenarios:**
         - **IR Shock**: Parallel shift in interest rates (e.g., +100bps)
         - **FX Shock**: FX spot move (e.g., -10%)
         - **Volatility Shock**: Increase in market volatility
         - **Credit Shock**: CDS spread widening (affects hazard rates)
         - **Combined**: Multiple shocks applied simultaneously
-        """
-    )
+        """)
 
     # Predefined scenarios
     scenario_type = st.selectbox(
@@ -2529,13 +2499,11 @@ def stress_test_tab(config: dict) -> None:
         st.subheader("📈 Stress Test Results")
 
         # Scenario summary
-        st.markdown(
-            f"""
+        st.markdown(f"""
             **Applied Shocks:** IR: {scenario['ir_shock']:+d}bps |
             FX: {scenario['fx_shock']:+d}% | Vol: +{scenario['vol_shock']}% |
             Credit: +{scenario['credit_shock']}%
-            """
-        )
+            """)
 
         # Comparison table
         comparison_data = {
@@ -2683,15 +2651,13 @@ def sensitivities_tab(config: dict) -> None:
     """
     st.header("📐 Sensitivities (Greeks)")
 
-    st.markdown(
-        """
+    st.markdown("""
         Calculate first-order sensitivities for xVA risk management and hedging.
         These are essential for:
         - **Hedging**: Determine hedge ratios for CVA desk
         - **P&L Attribution**: Explain daily xVA moves
         - **Limit Monitoring**: Track risk against limits
-        """
-    )
+        """)
 
     if st.session_state.results is None:
         st.info("Run a base simulation first to calculate sensitivities.")
@@ -2700,15 +2666,13 @@ def sensitivities_tab(config: dict) -> None:
     r = st.session_state.results
     base_xva = r["xva_result"]
 
-    st.info(
-        """
+    st.info("""
         **Sensitivity Definitions:**
         - **CS01**: Credit Spread 01 - xVA change for 1bp increase in CDS spread
         - **IR01**: Interest Rate 01 - xVA change for 1bp parallel rate shift
         - **Vega**: xVA change for 1% absolute increase in volatility
         - **FX Delta**: xVA change for 1% FX spot move
-        """
-    )
+        """)
 
     # Bump sizes
     st.subheader("⚙️ Bump Configuration")
@@ -2968,8 +2932,7 @@ def sensitivities_tab(config: dict) -> None:
         # Hedge recommendations
         st.subheader("🎯 Hedging Recommendations")
 
-        st.markdown(
-            f"""
+        st.markdown(f"""
             Based on the sensitivity analysis:
 
             | Risk Factor | Sensitivity | Hedge Instrument | Notional |
@@ -2978,8 +2941,7 @@ def sensitivities_tab(config: dict) -> None:
             | IR (IR01) | ${sens['IR01_Total']/1000:.1f}K/bp | IRS / Swaption | ${abs(sens['IR01_Total']/100)/1e6:.2f}M DV01 |
             | Vol (Vega) | ${sens['Vega_Total']/1000:.1f}K/% | Swaption straddle | ${abs(sens['Vega_Total']*10)/1e6:.2f}M vega |
             | FX (Delta) | ${sens['FXDelta_Total']/1000:.1f}K/% | FX forward | ${abs(sens['FXDelta_Total']*100)/1e6:.2f}M notional |
-            """
-        )
+            """)
 
 
 def methodology_tab(config: dict) -> None:
@@ -2990,12 +2952,10 @@ def methodology_tab(config: dict) -> None:
     """
     st.header("📚 Methodology & Documentation")
 
-    st.markdown(
-        """
+    st.markdown("""
         This section documents the mathematical foundations and regulatory
         framework underlying the xVA calculations.
-        """
-    )
+        """)
 
     # Sub-tabs for different sections
     doc_tab1, doc_tab2, doc_tab3, doc_tab4, doc_tab5 = st.tabs(
@@ -3011,8 +2971,7 @@ def methodology_tab(config: dict) -> None:
     with doc_tab1:
         st.subheader("Market Models")
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Ornstein-Uhlenbeck (OU) Process for Interest Rates
 
             Interest rates follow a mean-reverting OU process:
@@ -3029,13 +2988,11 @@ def methodology_tab(config: dict) -> None:
             **Properties:**
             - Mean: $E[r_t] = \\theta + (r_0 - \\theta)e^{-\\kappa t}$
             - Variance: $Var(r_t) = \\frac{\\sigma^2}{2\\kappa}(1 - e^{-2\\kappa t})$
-            """
-        )
+            """)
 
         st.divider()
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Geometric Brownian Motion (GBM) for FX
 
             FX spot rates follow a GBM process:
@@ -3058,14 +3015,12 @@ def methodology_tab(config: dict) -> None:
             - $dW = (dW_t^d, dW_t^f, dW_t^S)^T$ = correlated Brownian motions
             - $dZ = (dZ_t^1, dZ_t^2, dZ_t^3)^T$ = independent standard normals
             - $L$ = Cholesky factor of the correlation matrix $\\rho$
-            """
-        )
+            """)
 
     with doc_tab2:
         st.subheader("xVA Formulas")
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Credit Valuation Adjustment (CVA)
 
             $$\\text{CVA} = \\text{LGD}_c \\cdot \\int_0^T \\text{EPE}(t) \\cdot D(t) \\cdot dP_c(t)$$
@@ -3079,13 +3034,11 @@ def methodology_tab(config: dict) -> None:
             - $\\text{EPE}(t)$ = Expected Positive Exposure
             - $D(t)$ = Risk-free discount factor
             - $P_c(t)$ = Counterparty survival probability
-            """
-        )
+            """)
 
         st.divider()
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Debit Valuation Adjustment (DVA)
 
             $$\\text{DVA} = \\text{LGD}_{own} \\cdot \\int_0^T \\text{ENE}(t) \\cdot D(t) \\cdot dP_{own}(t)$$
@@ -3097,13 +3050,11 @@ def methodology_tab(config: dict) -> None:
             $$\\text{FVA} = s_f \\cdot \\int_0^T (\\text{EPE}(t) - \\text{ENE}(t)) \\cdot D(t) \\cdot dt$$
 
             Where $s_f$ = funding spread over OIS
-            """
-        )
+            """)
 
         st.divider()
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Margin Valuation Adjustment (MVA)
 
             $$\\text{MVA} = s_f \\cdot \\int_0^T \\text{IM}(t) \\cdot D(t) \\cdot dt$$
@@ -3117,14 +3068,12 @@ def methodology_tab(config: dict) -> None:
             Where:
             - $\\text{CoC}$ = Cost of Capital (hurdle rate)
             - $K(t)$ = Regulatory capital requirement
-            """
-        )
+            """)
 
     with doc_tab3:
         st.subheader("Regulatory Framework")
 
-        st.markdown(
-            """
+        st.markdown("""
             ### SA-CCR (Standardized Approach for Counterparty Credit Risk)
 
             Basel III framework for calculating Exposure at Default (EAD):
@@ -3147,13 +3096,11 @@ def methodology_tab(config: dict) -> None:
             - $\\text{SF}_{IR} = 0.5\\%$ (supervisory factor)
             - $\\text{MF}$ = Maturity factor
             - $d$ = Supervisory delta
-            """
-        )
+            """)
 
         st.divider()
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Initial Margin (ISDA SIMM)
 
             The SIMM (Standard Initial Margin Model) calculates IM based on:
@@ -3169,14 +3116,12 @@ def methodology_tab(config: dict) -> None:
             Where:
             - mult = IM multiplier
             - MPR = Margin Period of Risk (typically 10 days)
-            """
-        )
+            """)
 
     with doc_tab4:
         st.subheader("Monte Carlo Simulation")
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Simulation Framework
 
             The engine generates correlated market scenarios using:
@@ -3205,8 +3150,7 @@ def methodology_tab(config: dict) -> None:
             $$V^{coll}(t) = V(t) - C(t)$$
 
             Where $C(t)$ follows the CSA terms (threshold, MTA, MPR).
-            """
-        )
+            """)
 
         # Current configuration
         st.divider()
@@ -3241,8 +3185,7 @@ def methodology_tab(config: dict) -> None:
     with doc_tab5:
         st.subheader("References & Further Reading")
 
-        st.markdown(
-            """
+        st.markdown("""
             ### Academic References
 
             1. **Gregory, J.** (2020). *The xVA Challenge: Counterparty Risk, Funding,
@@ -3281,8 +3224,7 @@ def methodology_tab(config: dict) -> None:
             - Exposure profile validation
             - SA-CCR compliance checks
             - Stress testing frameworks
-            """
-        )
+            """)
 
         # Export methodology document
         st.divider()
