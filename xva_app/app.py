@@ -481,15 +481,18 @@ def portfolio_tab(config: dict) -> None:
 
     with col1:
         st.subheader("Interest Rate Swaps")
+        st.caption(
+            "💡 For a classic 'bell curve' exposure profile, use Fixed Rate ≈ θ (long-term rate in sidebar)"
+        )
         st.session_state.irs_trades = st.data_editor(
             st.session_state.get(
                 "irs_trades",
                 pd.DataFrame(
                     {
-                        "Notional ($M)": [10.0, 15.0, 8.0],
-                        "Fixed Rate (%)": [2.5, 2.0, 3.0],
-                        "Maturity (Y)": [5.0, 3.0, 7.0],
-                        "Pay Fixed": [True, False, True],
+                        "Notional ($M)": [10.0],
+                        "Fixed Rate (%)": [2.0],  # ATM: equals theta_d default
+                        "Maturity (Y)": [5.0],
+                        "Pay Fixed": [True],
                     }
                 ),
             ),
@@ -499,15 +502,16 @@ def portfolio_tab(config: dict) -> None:
 
     with col2:
         st.subheader("FX Forwards")
+        st.caption("💡 FX exposure is linear - no bell curve effect")
         st.session_state.fxf_trades = st.data_editor(
             st.session_state.get(
                 "fxf_trades",
                 pd.DataFrame(
                     {
-                        "Notional (M EUR)": [5.0, 3.0],
-                        "Strike": [1.12, 1.08],
-                        "Maturity (Y)": [1.0, 2.0],
-                        "Buy Foreign": [True, False],
+                        "Notional (M EUR)": [5.0],
+                        "Strike": [1.10],  # ATM: equals fx_spot default
+                        "Maturity (Y)": [2.0],
+                        "Buy Foreign": [True],
                     }
                 ),
             ),
@@ -539,6 +543,15 @@ def exposure_tab(config: dict) -> None:
 
     if st.session_state.results is None:
         st.info("Run simulation to see exposure profiles.")
+        st.markdown("""
+        **Expected Exposure Profiles:**
+
+        - **IRS (ATM)**: Bell-shaped curve - starts at 0, peaks mid-life, returns to 0 at maturity
+        - **FX Forward**: Linear increase then drop at maturity
+        - **Portfolio**: Combination depending on trade composition
+
+        💡 *For a classic swap bell curve, ensure Fixed Rate ≈ Long-term θ in the sidebar config.*
+        """)
         return
 
     r = st.session_state.results
@@ -3068,6 +3081,37 @@ def methodology_tab(config: dict) -> None:
             Where:
             - $\\text{CoC}$ = Cost of Capital (hurdle rate)
             - $K(t)$ = Regulatory capital requirement
+            """)
+
+        st.divider()
+
+        st.markdown("""
+            ### Credit Spreads by Rating - Methodology
+
+            The hazard rate $\\lambda$ (probability of default intensity) is derived from
+            market CDS spreads using:
+
+            $$\\lambda = \\frac{\\text{CDS Spread}}{\\text{LGD}}$$
+
+            **Typical market spreads by credit rating:**
+
+            | Rating | CDS Spread (bps) | Hazard Rate (LGD=60%) | Source |
+            |--------|------------------|----------------------|--------|
+            | AAA    | 20 - 50          | 0.33% - 0.83%        | iTraxx, CDX IG indices |
+            | AA     | 40 - 80          | 0.67% - 1.33%        | Senior financials |
+            | A      | 60 - 120         | 1.00% - 2.00%        | IG corporates |
+            | BBB    | 100 - 200        | 1.67% - 3.33%        | BBB corporate index |
+            | BB     | 200 - 400        | 3.33% - 6.67%        | HY crossover |
+            | B      | 400 - 800        | 6.67% - 13.33%       | High yield |
+
+            **Data Sources:**
+            - **Bloomberg/Reuters**: Real-time CDS quotes
+            - **IHS Markit**: iTraxx (Europe), CDX (North America) indices
+            - **Moody's/S&P**: Historical default studies by rating
+            - **BIS/Basel**: Regulatory guidance on credit risk parameters
+
+            **Note**: Spreads vary with market conditions. Values above are indicative
+            ranges based on historical averages (2015-2024).
             """)
 
     with doc_tab3:
