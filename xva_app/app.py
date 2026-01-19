@@ -490,20 +490,50 @@ def run_simulation(config: dict) -> None:
     st.rerun()
 
 
+def _calculate_par_swap_rate(
+    r0: float, maturity: float = 5.0, freq: float = 0.5
+) -> float:
+    """
+    Calculate par swap rate for a flat yield curve.
+
+    For a flat curve at rate r, par rate K satisfies:
+    K = (1 - P(0,T)) / (Σ τ_i * P(0, t_i))
+
+    where P(0, t) = e^(-r*t) for a flat curve.
+    """
+    # Payment times
+    n_payments = int(maturity / freq)
+    payment_times = np.array([(i + 1) * freq for i in range(n_payments)])
+
+    # Discount factors for flat curve
+    discount_factors = np.exp(-r0 * payment_times)
+
+    # Par rate formula
+    numerator = 1.0 - discount_factors[-1]
+    denominator = freq * np.sum(discount_factors)
+
+    if denominator < 1e-10:
+        return r0  # Fallback
+
+    return numerator / denominator
+
+
 def _apply_portfolio_preset(preset: str, config: dict) -> None:
     """Apply a portfolio preset - sets trades AND collateral parameters."""
     if preset == "bell_curve":
         # ===== BELL CURVE DEMO =====
         # Single ATM IRS, VM/IM disabled, clean setup for classic EPE hump
 
-        # Calculate approximate par rate (≈ long-term mean for flat curve)
-        par_rate = config.get("theta_d", 0.02) * 100  # As percentage
+        # Calculate proper par rate using the initial rate (r0 = theta_d for simplicity)
+        r0 = config.get("theta_d", 0.02)
+        par_rate = _calculate_par_swap_rate(r0, maturity=5.0, freq=0.5)
+        par_rate_pct = par_rate * 100  # As percentage
 
-        # Set single ATM swap
+        # Set single ATM swap with calculated par rate
         st.session_state.irs_trades = pd.DataFrame(
             {
                 "Notional ($M)": [10.0],
-                "Fixed Rate (%)": [par_rate],
+                "Fixed Rate (%)": [round(par_rate_pct, 3)],  # Precise par rate
                 "Maturity (Y)": [5.0],
                 "Pay Fixed": [True],
             }
@@ -524,9 +554,10 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
             if key in st.session_state:
                 del st.session_state[key]
 
-        # Store flag to indicate bell curve mode
+        # Store flag and calculated par rate for display
         st.session_state.bell_curve_mode = True
         st.session_state.bell_curve_threshold = 1e9  # $1B threshold = effectively off
+        st.session_state.calculated_par_rate = par_rate_pct
 
     elif preset == "mixed":
         # ===== MIXED PORTFOLIO =====
@@ -603,8 +634,9 @@ def portfolio_tab(config: dict) -> None:
 
     # Show current preset status
     if st.session_state.get("bell_curve_mode"):
+        par_rate = st.session_state.get("calculated_par_rate", 2.0)
         st.success(
-            "🔔 **Bell Curve Demo Active** - VM/IM disabled, single ATM IRS loaded. Click Run to see the classic EPE hump!"
+            f"🔔 **Bell Curve Demo Active** - Par rate = {par_rate:.3f}%, VM/IM disabled. Click Run!"
         )
 
     st.divider()
@@ -811,6 +843,41 @@ def exposure_tab(config: dict) -> None:
             )
     with col4:
         st.metric("Avg IM", f"${r['im_profile'].mean()/1e6:.2f}M")
+
+    # Bell curve diagnostics
+    if st.session_state.get("bell_curve_mode"):
+        with st.expander("🔍 Bell Curve Diagnostics", expanded=True):
+            times = r["sim_result"].time_grid
+            epe = r["epe_uncoll"]
+
+            col_a, col_b, col_c = st.columns(3)
+            with col_a:
+                st.metric("Time Grid Start", f"t={times[0]:.2f}Y")
+                st.metric("EPE(t=0)", f"${epe[0]/1e6:.4f}M")
+            with col_b:
+                peak_idx = np.argmax(epe)
+                st.metric("Peak Time", f"t={times[peak_idx]:.2f}Y")
+                st.metric("Peak EPE", f"${epe[peak_idx]/1e6:.2f}M")
+            with col_c:
+                st.metric("EPE(T=end)", f"${epe[-1]/1e6:.4f}M")
+                # Check if VM is truly off
+                vm_diff = np.abs(r["epe_uncoll"] - r["epe_coll"]).max()
+                if vm_diff < 1e-6:
+                    st.success("✅ VM off (EPE_coll = EPE_uncoll)")
+                else:
+                    st.warning(f"⚠️ VM active (diff={vm_diff/1e6:.2f}M)")
+
+            # Show if it's a proper bell curve
+            if epe[0] < epe[peak_idx] * 0.1 and epe[-1] < epe[peak_idx] * 0.1:
+                st.success(
+                    "🔔 Bell curve detected: starts low, peaks in middle, ends low"
+                )
+            elif peak_idx == 0:
+                st.warning(
+                    "⚠️ Peak at t=0 - swap may not be ATM. Try adjusting Fixed Rate."
+                )
+            else:
+                st.info(f"Profile: EPE peaks at t={times[peak_idx]:.2f}Y")
 
 
 def xva_tab(config: dict) -> None:
