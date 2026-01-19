@@ -136,8 +136,23 @@ def build_sidebar() -> dict:
     """Build sidebar with all configuration options."""
     config = {}
 
+    # Get calibrated params if available
+    calib = st.session_state.get("calibrated_params", {})
+
+    # Helper to get calibrated value or default
+    def get_calib(key: str, default):
+        val = calib.get(key)
+        return val if val is not None else default
+
     with st.sidebar:
         st.title("⚙️ Configuration")
+
+        # Show calibration status
+        has_calib = any(v is not None for k, v in calib.items()
+                       if k in ["ir_vol", "ir_kappa", "ir_theta", "fx_vol", "fx_spot",
+                               "hazard_rate", "correlation_ir_fx"])
+        if has_calib:
+            st.success("✓ Using calibrated parameters")
 
         # Simulation parameters
         with st.expander("🎲 Monte Carlo", expanded=True):
@@ -151,14 +166,23 @@ def build_sidebar() -> dict:
         # Market models
         with st.expander("📈 Market Models"):
             st.subheader("Domestic Rates (OU)")
+
+            # Use calibrated kappa if available
+            default_kappa_d = get_calib("ir_kappa", 0.10)
             config["kappa_d"] = st.slider(
-                "Mean Reversion κ", 0.01, 0.50, 0.10, key="kappa_d"
+                "Mean Reversion κ", 0.01, 0.50, float(default_kappa_d), key="kappa_d"
             )
+
+            # Use calibrated theta if available (stored as decimal, display as %)
+            default_theta_d = get_calib("ir_theta", 0.02) * 100  # Convert to %
             config["theta_d"] = (
-                st.slider("Long-term θ (%)", 0.0, 5.0, 2.0, key="theta_d") / 100
+                st.slider("Long-term θ (%)", 0.0, 5.0, float(default_theta_d), key="theta_d") / 100
             )
+
+            # Use calibrated sigma if available (stored as decimal, display as bps)
+            default_sigma_d = get_calib("ir_vol", 0.01) * 10000  # Convert to bps
             config["sigma_d"] = (
-                st.slider("Volatility σ (bps)", 10, 200, 100, key="sigma_d") / 10000
+                st.slider("Volatility σ (bps)", 10, 200, int(default_sigma_d), key="sigma_d") / 10000
             )
 
             st.subheader("Foreign Rates (OU)")
@@ -173,18 +197,38 @@ def build_sidebar() -> dict:
             )
 
             st.subheader("FX Model (GBM)")
+            # Use calibrated FX spot if available
+            default_fx_spot = get_calib("fx_spot", 1.10)
             config["fx_spot"] = st.number_input(
-                "Initial Spot", value=1.10, format="%.4f"
+                "Initial Spot", value=float(default_fx_spot), format="%.4f"
             )
-            config["fx_vol"] = st.slider("Volatility (%)", 5, 30, 12) / 100
+
+            # Use calibrated FX vol if available (stored as decimal, display as %)
+            default_fx_vol = get_calib("fx_vol", 0.12) * 100  # Convert to %
+            config["fx_vol"] = st.slider("Volatility (%)", 5, 30, int(default_fx_vol)) / 100
 
         # Correlations
         with st.expander("🔗 Correlations"):
             config["corr_df"] = st.slider(
                 "Domestic-Foreign", -1.0, 1.0, 0.7, key="corr_df"
             )
-            config["corr_dx"] = st.slider("Domestic-FX", -1.0, 1.0, -0.3, key="corr_dx")
+            # Use calibrated correlation if available
+            default_corr_dx = get_calib("correlation_ir_fx", -0.3)
+            config["corr_dx"] = st.slider("Domestic-FX", -1.0, 1.0, float(default_corr_dx), key="corr_dx")
             config["corr_fx"] = st.slider("Foreign-FX", -1.0, 1.0, 0.4, key="corr_fx")
+
+            # Validate correlation matrix is positive semi-definite
+            # det = 1 + 2*ρ12*ρ13*ρ23 - ρ12² - ρ13² - ρ23²
+            rho_df, rho_dx, rho_fx = config["corr_df"], config["corr_dx"], config["corr_fx"]
+            det = 1 + 2*rho_df*rho_dx*rho_fx - rho_df**2 - rho_dx**2 - rho_fx**2
+            if det < 0:
+                st.error(
+                    f"⚠️ Invalid correlation combination (det={det:.3f} < 0). "
+                    "Adjust values to form a valid correlation matrix."
+                )
+                config["corr_valid"] = False
+            else:
+                config["corr_valid"] = True
 
         # Collateral
         with st.expander("🏦 Collateral"):
@@ -199,8 +243,11 @@ def build_sidebar() -> dict:
         with st.expander("💰 Credit & Funding"):
             config["lgd_cpty"] = st.slider("LGD Counterparty (%)", 0, 100, 60) / 100
             config["lgd_own"] = st.slider("LGD Own (%)", 0, 100, 60) / 100
+
+            # Use calibrated hazard rate if available (stored as decimal, display as bps)
+            default_lambda_cpty = get_calib("hazard_rate", 0.012) * 10000  # Convert to bps
             config["lambda_cpty"] = (
-                st.slider("λ Counterparty (bps)", 0, 500, 120) / 10000
+                st.slider("λ Counterparty (bps)", 0, 500, int(default_lambda_cpty)) / 10000
             )
             config["lambda_own"] = st.slider("λ Own (bps)", 0, 500, 100) / 10000
             config["funding_spread"] = (
@@ -215,7 +262,10 @@ def build_sidebar() -> dict:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("▶️ Run", type="primary", use_container_width=True):
-                run_simulation(config)
+                if not config.get("corr_valid", True):
+                    st.error("Cannot run: fix correlation matrix first")
+                else:
+                    run_simulation(config)
         with col2:
             if st.button("🔄 Reset", use_container_width=True):
                 st.session_state.results = None
@@ -916,10 +966,15 @@ def _calibration_volatility_section(config: dict) -> None:
                 ].copy()
 
                 if st.button("✅ Apply IR Parameters", key="apply_ir", type="primary"):
+                    # Delete widget keys so sliders pick up new calibrated defaults on rerun
+                    for key in ["kappa_d", "theta_d", "sigma_d"]:
+                        if key in st.session_state:
+                            del st.session_state[key]
                     st.success(
                         f"Applied: σ={annualized_vol*10000:.0f}bps, "
                         f"κ={kappa_estimate:.2f}, θ={theta_estimate*100:.2f}%"
                     )
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"Error processing IR file: {e}")
@@ -1036,9 +1091,12 @@ def _calibration_volatility_section(config: dict) -> None:
                 ].copy()
 
                 if st.button("✅ Apply FX Parameters", key="apply_fx", type="primary"):
+                    # Note: FX sliders don't have keys, so we just store in calibrated_params
+                    # The sidebar will pick up the new defaults on next render
                     st.success(
                         f"Applied: σ={annualized_vol*100:.1f}%, Spot={current_spot:.4f}"
                     )
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"Error processing FX file: {e}")
@@ -1328,6 +1386,7 @@ def _calibration_cds_section(config: dict) -> None:
                         f"Applied: λ = {final_hazard*100:.2f}% "
                         f"(from CDS = {final_spread:.0f} bps, LGD = {lgd*100:.0f}%)"
                     )
+                    st.rerun()
 
             except Exception as e:
                 st.error(f"Error processing CDS file: {e}")
@@ -1465,7 +1524,11 @@ def _calibration_correlation_section(config: dict) -> None:
 
         if st.button("✅ Apply Manual Correlations", key="apply_manual_corr"):
             st.session_state.calibrated_params["correlation_ir_fx"] = manual_corr_ir_fx
+            # Delete widget key so slider picks up new calibrated default on rerun
+            if "corr_dx" in st.session_state:
+                del st.session_state["corr_dx"]
             st.success("Manual correlations applied.")
+            st.rerun()
 
         return
 
@@ -1644,7 +1707,11 @@ def _calibration_correlation_section(config: dict) -> None:
     st.session_state.calibrated_params["correlation_ir_fx_rolling"] = latest_corr
 
     if st.button("✅ Apply Calibrated Correlation", key="apply_corr", type="primary"):
+        # Delete widget key so slider picks up new calibrated default on rerun
+        if "corr_dx" in st.session_state:
+            del st.session_state["corr_dx"]
         st.success(f"Applied: ρ(IR, FX) = {overall_corr:.3f}")
+        st.rerun()
 
 
 def _calibration_ois_section(config: dict) -> None:
@@ -2957,10 +3024,12 @@ def methodology_tab(config: dict) -> None:
 
             The three Brownian motions are correlated via Cholesky decomposition:
 
-            $$\\begin{pmatrix} dW_t^d \\\\ dW_t^f \\\\ dW_t^S \\end{pmatrix} =
-            L \\cdot \\begin{pmatrix} dZ_t^1 \\\\ dZ_t^2 \\\\ dZ_t^3 \\end{pmatrix}$$
+            $$dW = L \\cdot dZ$$
 
-            Where $L$ is the Cholesky factor of the correlation matrix.
+            Where:
+            - $dW = (dW_t^d, dW_t^f, dW_t^S)^T$ = correlated Brownian motions
+            - $dZ = (dZ_t^1, dZ_t^2, dZ_t^3)^T$ = independent standard normals
+            - $L$ = Cholesky factor of the correlation matrix $\\rho$
             """
         )
 

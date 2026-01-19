@@ -95,31 +95,54 @@ class VariationMargin:
             self.days_per_step = dt_years * 365
 
         lag = self.lag_steps
+
+        # Step 1: Calculate TARGET collateral at each time step (what we WANT)
+        target_collateral = self._calculate_target_collateral(exposure)
+
+        # Step 2: Apply MPR lag - effective collateral is lagged target
         collateral = np.zeros_like(exposure)
-        pending_calls = np.zeros((n_paths, n_steps + lag))
-
         for t in range(n_steps):
-            # Current exposure
-            exp_t = exposure[:, t]
+            # Collateral effective at time t was determined at time (t - lag)
+            source_t = max(0, t - lag)
+            collateral[:, t] = target_collateral[:, source_t]
 
-            # Determine required collateral
-            call_amount = self._calculate_margin_call(exp_t, collateral[:, t])
-
-            # Apply call with lag
-            effective_t = min(t + lag, n_steps - 1)
-            pending_calls[:, effective_t] += call_amount
-
-            # Apply pending calls that have settled
-            if t < n_steps:
-                collateral[:, t] += pending_calls[:, t]
-                # Carry forward collateral balance
-                if t < n_steps - 1:
-                    collateral[:, t + 1] = collateral[:, t]
-
-        # Calculate collateralized exposure
+        # Step 3: Calculate collateralized exposure
         coll_exposure = exposure - collateral
 
         return collateral, coll_exposure
+
+    def _calculate_target_collateral(
+        self,
+        exposure: PathArray,
+    ) -> PathArray:
+        """
+        Calculate target collateral at each time step.
+
+        This is the collateral we WANT to have, before applying lag.
+
+        Parameters
+        ----------
+        exposure : PathArray
+            Exposure paths, shape (n_paths, n_steps)
+
+        Returns
+        -------
+        PathArray
+            Target collateral, shape (n_paths, n_steps)
+        """
+        target = np.zeros_like(exposure)
+
+        # Positive exposure above threshold: we receive collateral
+        # Collateral = exposure - threshold (capped by MTA check)
+        pos_mask = exposure > self.threshold + self.mta
+        target[pos_mask] = exposure[pos_mask] - self.threshold
+
+        # Negative exposure below -threshold: we post collateral (negative)
+        # Collateral = exposure + threshold
+        neg_mask = exposure < -(self.threshold + self.mta)
+        target[neg_mask] = exposure[neg_mask] + self.threshold
+
+        return target
 
     def _calculate_margin_call(
         self,
@@ -127,7 +150,7 @@ class VariationMargin:
         current_collateral: FloatArray,
     ) -> FloatArray:
         """
-        Calculate margin call amount.
+        Calculate margin call amount (legacy method, kept for compatibility).
 
         Parameters
         ----------
@@ -139,34 +162,17 @@ class VariationMargin:
         Returns
         -------
         FloatArray
-            Margin call amount (positive = post, negative = return)
+            Margin call amount (positive = receive, negative = post)
         """
-        n_paths = len(exposure)
-        call = np.zeros(n_paths)
+        target = np.zeros_like(exposure)
 
-        # Uncollateralized portion
-        uncoll = exposure - current_collateral
+        pos_mask = exposure > self.threshold + self.mta
+        target[pos_mask] = exposure[pos_mask] - self.threshold
 
-        # Positive exposure - we receive collateral
-        pos_mask = uncoll > self.threshold + self.mta
-        call[pos_mask] = uncoll[pos_mask] - self.threshold
+        neg_mask = exposure < -(self.threshold + self.mta)
+        target[neg_mask] = exposure[neg_mask] + self.threshold
 
-        # Negative exposure - we post collateral
-        neg_mask = uncoll < -(self.threshold + self.mta)
-        call[neg_mask] = uncoll[neg_mask] + self.threshold
-
-        # Check for collateral return (exposure reduced significantly)
-        return_threshold = max(self.threshold - self.mta, 0)
-
-        # If we were receiving collateral but exposure dropped
-        return_pos = (current_collateral > 0) & (uncoll < return_threshold)
-        call[return_pos] = np.minimum(uncoll[return_pos] - self.threshold, 0)
-
-        # If we were posting collateral but exposure improved
-        return_neg = (current_collateral < 0) & (uncoll > -return_threshold)
-        call[return_neg] = np.maximum(uncoll[return_neg] + self.threshold, 0)
-
-        return call
+        return target - current_collateral
 
 
 def apply_vm_to_exposure(
