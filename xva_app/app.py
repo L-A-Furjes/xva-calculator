@@ -477,6 +477,80 @@ def portfolio_tab(config: dict) -> None:
     """Portfolio editing tab."""
     st.header("📋 Trade Portfolio")
 
+    # Demo presets
+    st.subheader("🎯 Quick Presets")
+    preset_col1, preset_col2, preset_col3 = st.columns(3)
+
+    with preset_col1:
+        if st.button("🔔 Demo Bell Curve", help="Single ATM IRS, no collateral"):
+            # Single ATM swap at par
+            st.session_state.irs_trades = pd.DataFrame(
+                {
+                    "Notional ($M)": [10.0],
+                    "Fixed Rate (%)": [
+                        config.get("theta_d", 0.02) * 100
+                    ],  # Par rate ≈ θ
+                    "Maturity (Y)": [5.0],
+                    "Pay Fixed": [True],
+                }
+            )
+            # No FX forwards
+            st.session_state.fxf_trades = pd.DataFrame(
+                {
+                    "Notional (M EUR)": [],
+                    "Strike": [],
+                    "Maturity (Y)": [],
+                    "Buy Foreign": [],
+                }
+            )
+            st.success(
+                "✅ Bell curve demo loaded! Set Collateral Threshold to $100M in sidebar to disable VM, then Run."
+            )
+            st.rerun()
+
+    with preset_col2:
+        if st.button("📊 Mixed Portfolio", help="IRS + FX with netting"):
+            st.session_state.irs_trades = pd.DataFrame(
+                {
+                    "Notional ($M)": [10.0, 8.0],
+                    "Fixed Rate (%)": [2.0, 2.5],
+                    "Maturity (Y)": [5.0, 3.0],
+                    "Pay Fixed": [True, False],
+                }
+            )
+            st.session_state.fxf_trades = pd.DataFrame(
+                {
+                    "Notional (M EUR)": [5.0],
+                    "Strike": [1.10],
+                    "Maturity (Y)": [2.0],
+                    "Buy Foreign": [True],
+                }
+            )
+            st.info("Mixed portfolio loaded - shows netting effects")
+            st.rerun()
+
+    with preset_col3:
+        if st.button("🧹 Clear All", help="Empty portfolio"):
+            st.session_state.irs_trades = pd.DataFrame(
+                {
+                    "Notional ($M)": [],
+                    "Fixed Rate (%)": [],
+                    "Maturity (Y)": [],
+                    "Pay Fixed": [],
+                }
+            )
+            st.session_state.fxf_trades = pd.DataFrame(
+                {
+                    "Notional (M EUR)": [],
+                    "Strike": [],
+                    "Maturity (Y)": [],
+                    "Buy Foreign": [],
+                }
+            )
+            st.rerun()
+
+    st.divider()
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -550,7 +624,25 @@ def exposure_tab(config: dict) -> None:
         - **FX Forward**: Linear increase then drop at maturity
         - **Portfolio**: Combination depending on trade composition
 
-        💡 *For a classic swap bell curve, ensure Fixed Rate ≈ Long-term θ in the sidebar config.*
+        ---
+
+        ### 🔔 Comment voir la "cloche" classique ?
+
+        Pour observer le profil en cloche typique d'un swap, il faut :
+
+        1. **Trade à par (ATM)** : Fixed Rate = Par Rate ≈ θ (taux long terme)
+        2. **Pas de collatéral** : Threshold = $100M (ou très élevé) pour désactiver VM
+        3. **Un seul produit** : Pas de netting qui masque la forme
+        4. **Volatilité non nulle** : σ > 0
+
+        👉 *Utilisez le preset "Demo Bell Curve" dans l'onglet Portfolio*
+
+        ---
+
+        **Note IMM vs SA-CCR :**
+        - **EE** (Expected Exposure) : $\\mathbb{E}[\\max(V_t, 0)]$
+        - **Effective EE** : Running max de EE (non-décroissante) - *utilisé dans IMM*
+        - **SA-CCR** : N'utilise pas Effective EE, donc les courbes peuvent différer
         """)
         return
 
