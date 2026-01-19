@@ -175,6 +175,7 @@ class MonteCarloEngine:
         self,
         instruments: Sequence[Instrument],
         market_config: MarketConfig,
+        deterministic_t0: bool = True,
     ) -> SimulationResult:
         """
         Run Monte Carlo simulation for a portfolio of instruments.
@@ -185,6 +186,9 @@ class MonteCarloEngine:
             List of instruments to price
         market_config : MarketConfig
             Market configuration with model parameters
+        deterministic_t0 : bool
+            If True (default), make V(0) deterministic. This is correct
+            for xVA since today's MTM is known exactly.
 
         Returns
         -------
@@ -237,7 +241,9 @@ class MonteCarloEngine:
         }
 
         # Calculate portfolio MTM at each time step
-        mtm = self._calculate_portfolio_mtm(instruments, paths_data)
+        mtm = self._calculate_portfolio_mtm(
+            instruments, paths_data, deterministic_t0=deterministic_t0
+        )
 
         return SimulationResult(
             time_grid=self._time_grid,
@@ -287,6 +293,7 @@ class MonteCarloEngine:
         self,
         instruments: Sequence[Instrument],
         paths_data: dict[str, PathArray],
+        deterministic_t0: bool = False,
     ) -> PathArray:
         """
         Calculate portfolio MTM at each time step.
@@ -297,6 +304,9 @@ class MonteCarloEngine:
             Portfolio of instruments
         paths_data : dict
             Simulated market data paths
+        deterministic_t0 : bool
+            If True, make V(0) deterministic (same for all paths).
+            This is correct for xVA: today's MTM is known exactly.
 
         Returns
         -------
@@ -313,6 +323,12 @@ class MonteCarloEngine:
                     paths_data=paths_data,
                 )
                 mtm[:, time_idx] += inst_mtm
+
+        # Make t=0 deterministic if requested
+        # Rationale: V(0) = today's MTM, which is known (not stochastic)
+        # For xVA, only V(t) for t>0 has uncertainty
+        if deterministic_t0:
+            mtm[:, 0] = mtm[:, 0].mean()
 
         return mtm
 
