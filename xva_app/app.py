@@ -849,7 +849,42 @@ def exposure_tab(config: dict) -> None:
         with st.expander("🔍 Bell Curve Diagnostics", expanded=True):
             times = r["sim_result"].time_grid
             epe = r["epe_uncoll"]
+            mtm = r["sim_result"].mtm  # (n_paths, n_steps)
 
+            # ===== THE DECISIVE TEST: PV(0) =====
+            st.markdown("### 🎯 Test Décisif : PV(0)")
+            pv0_mean = mtm[:, 0].mean()
+            pv0_std = mtm[:, 0].std()
+            notional = 10e6  # Assuming 10M notional
+
+            col_pv1, col_pv2, col_pv3 = st.columns(3)
+            with col_pv1:
+                st.metric(
+                    "Avg PV(0)",
+                    f"${pv0_mean/1e6:.4f}M",
+                    help="Should be ~0 for ATM swap",
+                )
+            with col_pv2:
+                st.metric("Std PV(0)", f"${pv0_std/1e6:.4f}M")
+            with col_pv3:
+                pv0_bps = abs(pv0_mean) / notional * 10000
+                st.metric("PV(0) in bps", f"{pv0_bps:.1f} bps")
+
+            # Verdict
+            if abs(pv0_mean) < notional * 0.001:  # < 10 bps of notional
+                st.success("✅ Swap is ATM: PV(0) ≈ 0")
+            else:
+                direction = "ITM (positive)" if pv0_mean > 0 else "OTM (negative)"
+                st.error(
+                    f"❌ Swap is NOT ATM: PV(0) = ${pv0_mean/1e6:.4f}M ({direction}). "
+                    f"This explains why EPE starts high. "
+                    f"Try adjusting Fixed Rate by ~{-pv0_bps:.0f} bps."
+                )
+
+            st.divider()
+
+            # Other diagnostics
+            st.markdown("### 📊 Exposure Profile")
             col_a, col_b, col_c = st.columns(3)
             with col_a:
                 st.metric("Time Grid Start", f"t={times[0]:.2f}Y")
@@ -863,7 +898,7 @@ def exposure_tab(config: dict) -> None:
                 # Check if VM is truly off
                 vm_diff = np.abs(r["epe_uncoll"] - r["epe_coll"]).max()
                 if vm_diff < 1e-6:
-                    st.success("✅ VM off (EPE_coll = EPE_uncoll)")
+                    st.success("✅ VM off")
                 else:
                     st.warning(f"⚠️ VM active (diff={vm_diff/1e6:.2f}M)")
 
@@ -872,9 +907,9 @@ def exposure_tab(config: dict) -> None:
                 st.success(
                     "🔔 Bell curve detected: starts low, peaks in middle, ends low"
                 )
-            elif peak_idx == 0:
+            elif peak_idx <= 1:
                 st.warning(
-                    "⚠️ Peak at t=0 - swap may not be ATM. Try adjusting Fixed Rate."
+                    "⚠️ Peak at start - swap is ITM. Adjust Fixed Rate based on PV(0)."
                 )
             else:
                 st.info(f"Profile: EPE peaks at t={times[peak_idx]:.2f}Y")
