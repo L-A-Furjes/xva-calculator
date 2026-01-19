@@ -255,12 +255,29 @@ def build_sidebar() -> dict:
 
         # Collateral
         with st.expander("🏦 Collateral"):
+            # Check if bell curve mode is active - use high threshold to disable VM
+            bell_mode = st.session_state.get("bell_curve_mode", False)
+            if bell_mode:
+                st.info("🔔 Bell Curve Mode: VM/IM disabled (high threshold)")
+                default_threshold = 1000.0  # $1B = effectively off
+                default_mta = 0.0
+                default_mpr = 0
+                default_im = 1.0
+            else:
+                default_threshold = 1.0
+                default_mta = 100.0
+                default_mpr = 10
+                default_im = 1.5
+
             config["threshold"] = (
-                st.number_input("Threshold ($M)", value=1.0, step=0.1) * 1e6
+                st.number_input("Threshold ($M)", value=default_threshold, step=0.1)
+                * 1e6
             )
-            config["mta"] = st.number_input("MTA ($K)", value=100.0, step=10.0) * 1e3
-            config["mpr_days"] = st.slider("MPR (days)", 0, 20, 10)
-            config["im_mult"] = st.slider("IM Multiplier", 1.0, 3.0, 1.5)
+            config["mta"] = (
+                st.number_input("MTA ($K)", value=default_mta, step=10.0) * 1e3
+            )
+            config["mpr_days"] = st.slider("MPR (days)", 0, 20, default_mpr)
+            config["im_mult"] = st.slider("IM Multiplier", 1.0, 3.0, default_im)
 
         # Credit & Funding
         with st.expander("💰 Credit & Funding"):
@@ -473,6 +490,85 @@ def run_simulation(config: dict) -> None:
     st.rerun()
 
 
+def _apply_portfolio_preset(preset: str, config: dict) -> None:
+    """Apply a portfolio preset - sets trades AND collateral parameters."""
+    if preset == "bell_curve":
+        # ===== BELL CURVE DEMO =====
+        # Single ATM IRS, VM/IM disabled, clean setup for classic EPE hump
+
+        # Calculate approximate par rate (≈ long-term mean for flat curve)
+        par_rate = config.get("theta_d", 0.02) * 100  # As percentage
+
+        # Set single ATM swap
+        st.session_state.irs_trades = pd.DataFrame(
+            {
+                "Notional ($M)": [10.0],
+                "Fixed Rate (%)": [par_rate],
+                "Maturity (Y)": [5.0],
+                "Pay Fixed": [True],
+            }
+        )
+        # No FX forwards
+        st.session_state.fxf_trades = pd.DataFrame(
+            {
+                "Notional (M EUR)": pd.Series([], dtype=float),
+                "Strike": pd.Series([], dtype=float),
+                "Maturity (Y)": pd.Series([], dtype=float),
+                "Buy Foreign": pd.Series([], dtype=bool),
+            }
+        )
+
+        # Disable collateral by setting very high threshold
+        # Delete existing widget keys to allow new defaults
+        for key in ["threshold_input", "mta_input", "mpr_slider", "im_mult_slider"]:
+            if key in st.session_state:
+                del st.session_state[key]
+
+        # Store flag to indicate bell curve mode
+        st.session_state.bell_curve_mode = True
+        st.session_state.bell_curve_threshold = 1e9  # $1B threshold = effectively off
+
+    elif preset == "mixed":
+        # ===== MIXED PORTFOLIO =====
+        st.session_state.irs_trades = pd.DataFrame(
+            {
+                "Notional ($M)": [10.0, 8.0],
+                "Fixed Rate (%)": [2.0, 2.5],
+                "Maturity (Y)": [5.0, 3.0],
+                "Pay Fixed": [True, False],
+            }
+        )
+        st.session_state.fxf_trades = pd.DataFrame(
+            {
+                "Notional (M EUR)": [5.0],
+                "Strike": [1.10],
+                "Maturity (Y)": [2.0],
+                "Buy Foreign": [True],
+            }
+        )
+        st.session_state.bell_curve_mode = False
+
+    elif preset == "clear":
+        # ===== CLEAR ALL =====
+        st.session_state.irs_trades = pd.DataFrame(
+            {
+                "Notional ($M)": pd.Series([], dtype=float),
+                "Fixed Rate (%)": pd.Series([], dtype=float),
+                "Maturity (Y)": pd.Series([], dtype=float),
+                "Pay Fixed": pd.Series([], dtype=bool),
+            }
+        )
+        st.session_state.fxf_trades = pd.DataFrame(
+            {
+                "Notional (M EUR)": pd.Series([], dtype=float),
+                "Strike": pd.Series([], dtype=float),
+                "Maturity (Y)": pd.Series([], dtype=float),
+                "Buy Foreign": pd.Series([], dtype=bool),
+            }
+        )
+        st.session_state.bell_curve_mode = False
+
+
 def portfolio_tab(config: dict) -> None:
     """Portfolio editing tab."""
     st.header("📋 Trade Portfolio")
@@ -482,72 +578,34 @@ def portfolio_tab(config: dict) -> None:
     preset_col1, preset_col2, preset_col3 = st.columns(3)
 
     with preset_col1:
-        if st.button("🔔 Demo Bell Curve", help="Single ATM IRS, no collateral"):
-            # Single ATM swap at par
-            st.session_state.irs_trades = pd.DataFrame(
-                {
-                    "Notional ($M)": [10.0],
-                    "Fixed Rate (%)": [
-                        config.get("theta_d", 0.02) * 100
-                    ],  # Par rate ≈ θ
-                    "Maturity (Y)": [5.0],
-                    "Pay Fixed": [True],
-                }
-            )
-            # No FX forwards
-            st.session_state.fxf_trades = pd.DataFrame(
-                {
-                    "Notional (M EUR)": [],
-                    "Strike": [],
-                    "Maturity (Y)": [],
-                    "Buy Foreign": [],
-                }
-            )
-            st.success(
-                "✅ Bell curve demo loaded! Set Collateral Threshold to $100M in sidebar to disable VM, then Run."
-            )
+        if st.button(
+            "🔔 Demo Bell Curve",
+            help="ATM single IRS, VM/IM off, non-zero vol → classic bell-shaped EPE",
+        ):
+            # Store preset request - will be applied on next run
+            st.session_state.apply_preset = "bell_curve"
             st.rerun()
 
     with preset_col2:
-        if st.button("📊 Mixed Portfolio", help="IRS + FX with netting"):
-            st.session_state.irs_trades = pd.DataFrame(
-                {
-                    "Notional ($M)": [10.0, 8.0],
-                    "Fixed Rate (%)": [2.0, 2.5],
-                    "Maturity (Y)": [5.0, 3.0],
-                    "Pay Fixed": [True, False],
-                }
-            )
-            st.session_state.fxf_trades = pd.DataFrame(
-                {
-                    "Notional (M EUR)": [5.0],
-                    "Strike": [1.10],
-                    "Maturity (Y)": [2.0],
-                    "Buy Foreign": [True],
-                }
-            )
-            st.info("Mixed portfolio loaded - shows netting effects")
+        if st.button("📊 Mixed Portfolio", help="IRS + FX with netting effects"):
+            st.session_state.apply_preset = "mixed"
             st.rerun()
 
     with preset_col3:
         if st.button("🧹 Clear All", help="Empty portfolio"):
-            st.session_state.irs_trades = pd.DataFrame(
-                {
-                    "Notional ($M)": [],
-                    "Fixed Rate (%)": [],
-                    "Maturity (Y)": [],
-                    "Pay Fixed": [],
-                }
-            )
-            st.session_state.fxf_trades = pd.DataFrame(
-                {
-                    "Notional (M EUR)": [],
-                    "Strike": [],
-                    "Maturity (Y)": [],
-                    "Buy Foreign": [],
-                }
-            )
+            st.session_state.apply_preset = "clear"
             st.rerun()
+
+    # Check if a preset was requested and apply it
+    if "apply_preset" in st.session_state:
+        preset = st.session_state.pop("apply_preset")
+        _apply_portfolio_preset(preset, config)
+
+    # Show current preset status
+    if st.session_state.get("bell_curve_mode"):
+        st.success(
+            "🔔 **Bell Curve Demo Active** - VM/IM disabled, single ATM IRS loaded. Click Run to see the classic EPE hump!"
+        )
 
     st.divider()
 
@@ -555,16 +613,14 @@ def portfolio_tab(config: dict) -> None:
 
     with col1:
         st.subheader("Interest Rate Swaps")
-        st.caption(
-            "💡 For a classic 'bell curve' exposure profile, use Fixed Rate ≈ θ (long-term rate in sidebar)"
-        )
+        st.caption("💡 For bell curve: Fixed Rate ≈ par rate (≈ long-term mean rate)")
         st.session_state.irs_trades = st.data_editor(
             st.session_state.get(
                 "irs_trades",
                 pd.DataFrame(
                     {
                         "Notional ($M)": [10.0],
-                        "Fixed Rate (%)": [2.0],  # ATM: equals theta_d default
+                        "Fixed Rate (%)": [2.0],  # Close to par rate
                         "Maturity (Y)": [5.0],
                         "Pay Fixed": [True],
                     }
@@ -630,19 +686,19 @@ def exposure_tab(config: dict) -> None:
 
         Pour observer le profil en cloche typique d'un swap, il faut :
 
-        1. **Trade à par (ATM)** : Fixed Rate = Par Rate ≈ θ (taux long terme)
-        2. **Pas de collatéral** : Threshold = $100M (ou très élevé) pour désactiver VM
+        1. **Trade à par (ATM)** : Fixed Rate ≈ Par Rate (proche du taux long terme θ_OU dans Market Models)
+        2. **Pas de collatéral** : VM Threshold très élevé ($1B+) pour désactiver VM
         3. **Un seul produit** : Pas de netting qui masque la forme
         4. **Volatilité non nulle** : σ > 0
 
-        👉 *Utilisez le preset "Demo Bell Curve" dans l'onglet Portfolio*
+        👉 **Cliquez sur "🔔 Demo Bell Curve" dans l'onglet Portfolio** - tout sera configuré automatiquement !
 
         ---
 
         **Note IMM vs SA-CCR :**
-        - **EE** (Expected Exposure) : $\\mathbb{E}[\\max(V_t, 0)]$
-        - **Effective EE** : Running max de EE (non-décroissante) - *utilisé dans IMM*
-        - **SA-CCR** : N'utilise pas Effective EE, donc les courbes peuvent différer
+        - **EE** (Expected Exposure) : $\\mathbb{E}[\\max(V_t, 0)]$ - c'est ce qu'on affiche
+        - **Effective EE** : Running max de EE (non-décroissante) - *utilisé dans IMM, pas affiché ici*
+        - **SA-CCR** : N'utilise pas Effective EE, donc les courbes peuvent différer du schéma IMM classique
         """)
         return
 
@@ -740,8 +796,19 @@ def exposure_tab(config: dict) -> None:
     with col2:
         st.metric("Peak EPE (Coll)", f"${r['epe_coll'].max()/1e6:.2f}M")
     with col3:
-        reduction = (1 - r["epe_coll"].max() / r["epe_uncoll"].max()) * 100
-        st.metric("Collateral Benefit", f"{reduction:.1f}%")
+        # Use AUC-based reduction with guard for small denominators
+        times = r["sim_result"].time_grid
+        auc_uncoll = np.trapz(r["epe_uncoll"], times)
+        auc_coll = np.trapz(r["epe_coll"], times)
+        if auc_uncoll < 1e-6:  # Guard against tiny/zero AUC
+            st.metric("Collateral Benefit", "N/A", help="EPE too small to measure")
+        else:
+            reduction = (1 - auc_coll / auc_uncoll) * 100
+            st.metric(
+                "Collateral Benefit",
+                f"{reduction:.1f}%",
+                help="AUC reduction: (1 - AUC_coll/AUC_uncoll) × 100%",
+            )
     with col4:
         st.metric("Avg IM", f"${r['im_profile'].mean()/1e6:.2f}M")
 
