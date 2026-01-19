@@ -148,9 +148,20 @@ def build_sidebar() -> dict:
         st.title("⚙️ Configuration")
 
         # Show calibration status
-        has_calib = any(v is not None for k, v in calib.items()
-                       if k in ["ir_vol", "ir_kappa", "ir_theta", "fx_vol", "fx_spot",
-                               "hazard_rate", "correlation_ir_fx"])
+        has_calib = any(
+            v is not None
+            for k, v in calib.items()
+            if k
+            in [
+                "ir_vol",
+                "ir_kappa",
+                "ir_theta",
+                "fx_vol",
+                "fx_spot",
+                "hazard_rate",
+                "correlation_ir_fx",
+            ]
+        )
         if has_calib:
             st.success("✓ Using calibrated parameters")
 
@@ -176,13 +187,19 @@ def build_sidebar() -> dict:
             # Use calibrated theta if available (stored as decimal, display as %)
             default_theta_d = get_calib("ir_theta", 0.02) * 100  # Convert to %
             config["theta_d"] = (
-                st.slider("Long-term θ (%)", 0.0, 5.0, float(default_theta_d), key="theta_d") / 100
+                st.slider(
+                    "Long-term θ (%)", 0.0, 5.0, float(default_theta_d), key="theta_d"
+                )
+                / 100
             )
 
             # Use calibrated sigma if available (stored as decimal, display as bps)
             default_sigma_d = get_calib("ir_vol", 0.01) * 10000  # Convert to bps
             config["sigma_d"] = (
-                st.slider("Volatility σ (bps)", 10, 200, int(default_sigma_d), key="sigma_d") / 10000
+                st.slider(
+                    "Volatility σ (bps)", 10, 200, int(default_sigma_d), key="sigma_d"
+                )
+                / 10000
             )
 
             st.subheader("Foreign Rates (OU)")
@@ -205,7 +222,9 @@ def build_sidebar() -> dict:
 
             # Use calibrated FX vol if available (stored as decimal, display as %)
             default_fx_vol = get_calib("fx_vol", 0.12) * 100  # Convert to %
-            config["fx_vol"] = st.slider("Volatility (%)", 5, 30, int(default_fx_vol)) / 100
+            config["fx_vol"] = (
+                st.slider("Volatility (%)", 5, 30, int(default_fx_vol)) / 100
+            )
 
         # Correlations
         with st.expander("🔗 Correlations"):
@@ -214,13 +233,19 @@ def build_sidebar() -> dict:
             )
             # Use calibrated correlation if available
             default_corr_dx = get_calib("correlation_ir_fx", -0.3)
-            config["corr_dx"] = st.slider("Domestic-FX", -1.0, 1.0, float(default_corr_dx), key="corr_dx")
+            config["corr_dx"] = st.slider(
+                "Domestic-FX", -1.0, 1.0, float(default_corr_dx), key="corr_dx"
+            )
             config["corr_fx"] = st.slider("Foreign-FX", -1.0, 1.0, 0.4, key="corr_fx")
 
             # Validate correlation matrix is positive semi-definite
             # det = 1 + 2*ρ12*ρ13*ρ23 - ρ12² - ρ13² - ρ23²
-            rho_df, rho_dx, rho_fx = config["corr_df"], config["corr_dx"], config["corr_fx"]
-            det = 1 + 2*rho_df*rho_dx*rho_fx - rho_df**2 - rho_dx**2 - rho_fx**2
+            rho_df, rho_dx, rho_fx = (
+                config["corr_df"],
+                config["corr_dx"],
+                config["corr_fx"],
+            )
+            det = 1 + 2 * rho_df * rho_dx * rho_fx - rho_df**2 - rho_dx**2 - rho_fx**2
             if det < 0:
                 st.error(
                     f"⚠️ Invalid correlation combination (det={det:.3f} < 0). "
@@ -245,9 +270,12 @@ def build_sidebar() -> dict:
             config["lgd_own"] = st.slider("LGD Own (%)", 0, 100, 60) / 100
 
             # Use calibrated hazard rate if available (stored as decimal, display as bps)
-            default_lambda_cpty = get_calib("hazard_rate", 0.012) * 10000  # Convert to bps
+            default_lambda_cpty = (
+                get_calib("hazard_rate", 0.012) * 10000
+            )  # Convert to bps
             config["lambda_cpty"] = (
-                st.slider("λ Counterparty (bps)", 0, 500, int(default_lambda_cpty)) / 10000
+                st.slider("λ Counterparty (bps)", 0, 500, int(default_lambda_cpty))
+                / 10000
             )
             config["lambda_own"] = st.slider("λ Own (bps)", 0, 500, 100) / 10000
             config["funding_spread"] = (
