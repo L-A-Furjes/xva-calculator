@@ -3028,6 +3028,7 @@ def sensitivities_tab(config: dict) -> None:
 
             market_config = build_market_config(bumped_config)
             # Bell curve mode: use dt=0.5 to align with semi-annual payment dates
+
         # This removes sawtooth artifacts and shows cleaner bell shape
         if st.session_state.get("bell_curve_mode"):
             dt = 0.5
