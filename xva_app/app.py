@@ -3487,7 +3487,7 @@ def methodology_tab(config: dict) -> None:
 
             Where:
             - $s$ = CDS spread in decimal (e.g., 100 bps = 0.01)
-            - $\\text{LGD}$ = Loss Given Default = 60% (i.e., Recovery $R$ = 40%)
+            - $\\text{LGD} = 1 - R$ = Loss Given Default (here: 60%, with Recovery $R$ = 40%)
             - $\\lambda$ = constant hazard rate (intensity of default)
 
             This is a standard simplification assuming **flat spread** and **flat hazard rate**
@@ -3517,7 +3517,7 @@ def methodology_tab(config: dict) -> None:
             Updated annually. Widely used in corporate finance education.
 
             🔗 `https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/ratings.html`
-            *(Accessed: January 2025)*
+            *(Accessed: 2026-01-20)*
 
             **(2) FRED – ICE BofA Corporate Bond OAS Indices**
 
@@ -3526,7 +3526,7 @@ def methodology_tab(config: dict) -> None:
             Provider: ICE Data Indices, LLC
 
             🔗 `https://fred.stlouisfed.org/series/BAMLC0A4CBBB`
-            *(Accessed: January 2025)*
+            *(Accessed: 2026-01-20)*
 
             **(3) IHS Markit – CDS Indices Primer**
 
@@ -3535,7 +3535,7 @@ def methodology_tab(config: dict) -> None:
             CDX.NA.IG, CDX.NA.HY
 
             🔗 `https://www.spglobal.com/spdji/en/landing/topic/itraxx/`
-            *(Accessed: January 2025)*
+            *(Accessed: 2026-01-20)*
 
             ---
 
