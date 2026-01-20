@@ -176,11 +176,8 @@ def build_sidebar() -> dict:
         with st.expander("📈 Market Models"):
             st.subheader("Domestic Rates (OU)")
 
-            # Use calibrated kappa if available, or slow MR preset value
-            if st.session_state.get("bell_slow_kappa"):
-                default_kappa_d = st.session_state.bell_slow_kappa
-            else:
-                default_kappa_d = get_calib("ir_kappa", 0.10)
+            # Use calibrated kappa if available
+            default_kappa_d = get_calib("ir_kappa", 0.10)
             config["kappa_d"] = st.slider(
                 "Mean Reversion κ", 0.01, 0.50, float(default_kappa_d), key="kappa_d"
             )
@@ -194,11 +191,8 @@ def build_sidebar() -> dict:
                 / 100
             )
 
-            # Use calibrated sigma if available, or slow MR preset value
-            if st.session_state.get("bell_slow_sigma"):
-                default_sigma_d = st.session_state.bell_slow_sigma
-            else:
-                default_sigma_d = get_calib("ir_vol", 0.01) * 10000  # Convert to bps
+            # Use calibrated sigma if available (stored as decimal, display as bps)
+            default_sigma_d = get_calib("ir_vol", 0.01) * 10000  # Convert to bps
             config["sigma_d"] = (
                 st.slider(
                     "Volatility σ (bps)", 10, 200, int(default_sigma_d), key="sigma_d"
@@ -596,15 +590,13 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         # Same as bell_curve but with slower mean reversion and higher vol
         # This shifts the EPE peak from ~0.5Y towards ~2Y for a more "textbook" bell
 
-        # Use slow MR parameters: kappa=0.03, sigma=2%
-        # Delete existing slider keys to allow new values
-        for key in ["kappa_d", "sigma_d"]:
-            if key in st.session_state:
-                del st.session_state[key]
+        # Directly set slider values (Streamlit reads from session_state keys)
+        st.session_state.kappa_d = 0.03
+        st.session_state.sigma_d = 200  # bps (slider uses bps)
 
-        # Store the slow MR parameters to be used by sliders
+        # Also store flags for reference
         st.session_state.bell_slow_kappa = 0.03
-        st.session_state.bell_slow_sigma = 200  # bps
+        st.session_state.bell_slow_sigma = 200
 
         # Calculate par rate with default theta (will use slow kappa/sigma for sim)
         r0 = config.get("theta_d", 0.02)
@@ -661,6 +653,11 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         st.session_state.bell_curve_slow_mode = False
         st.session_state.bell_slow_kappa = None
         st.session_state.bell_slow_sigma = None
+        # Reset market model sliders to defaults
+        if "kappa_d" in st.session_state:
+            del st.session_state["kappa_d"]
+        if "sigma_d" in st.session_state:
+            del st.session_state["sigma_d"]
 
     elif preset == "clear":
         # ===== CLEAR ALL =====
@@ -684,6 +681,11 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         st.session_state.bell_curve_slow_mode = False
         st.session_state.bell_slow_kappa = None
         st.session_state.bell_slow_sigma = None
+        # Reset market model sliders to defaults
+        if "kappa_d" in st.session_state:
+            del st.session_state["kappa_d"]
+        if "sigma_d" in st.session_state:
+            del st.session_state["sigma_d"]
 
 
 def portfolio_tab(config: dict) -> None:
