@@ -3482,53 +3482,67 @@ def methodology_tab(config: dict) -> None:
             ### Credit Spreads by Rating - Methodology
 
             The hazard rate $\\lambda$ (probability of default intensity) is derived from
-            market CDS spreads using:
+            market CDS spreads using the simplified approximation:
 
-            $$\\lambda = \\frac{\\text{CDS Spread}}{\\text{LGD}}$$
+            $$\\lambda \\approx \\frac{\\text{CDS Spread}}{1 - R}$$
 
-            **Typical market spreads by credit rating:**
+            Where $R$ is the recovery rate (typically 40%, so LGD = 60%).
 
-            | Rating | Our Range (bps) | NYU Stern (bps) | Hazard Rate (LGD=60%) |
-            |--------|-----------------|-----------------|----------------------|
-            | AAA    | 20 - 50         | 40              | 0.33% - 0.83%        |
-            | AA     | 40 - 80         | 55              | 0.67% - 1.33%        |
-            | A      | 60 - 120        | 70 - 89         | 1.00% - 2.00%        |
-            | BBB    | 100 - 200       | 111             | 1.67% - 3.33%        |
-            | BB     | 200 - 400       | 138 - 184       | 3.33% - 6.67%        |
-            | B      | 400 - 800       | 275 - 509       | 6.67% - 13.33%       |
+            **Spread ranges used in this application:**
 
-            **Note**: Our ranges are slightly wider than point estimates to account for
-            market volatility across economic cycles (2015-2024).
+            | Rating | App Range (bps) | Academic Ref. (bps) | Hazard Rate (LGD=60%) |
+            |--------|-----------------|---------------------|----------------------|
+            | AAA    | 20 - 50         | ~40                 | 0.33% - 0.83%        |
+            | AA     | 40 - 80         | ~55                 | 0.67% - 1.33%        |
+            | A      | 60 - 120        | 70 - 89             | 1.00% - 2.00%        |
+            | BBB    | 100 - 200       | ~111                | 1.67% - 3.33%        |
+            | BB     | 200 - 400       | 138 - 184           | 3.33% - 6.67%        |
+            | B      | 400 - 800       | 275 - 509           | 6.67% - 13.33%       |
+
+            **Calibration approach**: Ranges are intentionally wider than point estimates
+            to cover market variability across credit cycles.
 
             ---
 
-            ### Official Data Sources & References
+            ### Sources & References
 
-            **1. Academic Reference (NYU Stern - Aswath Damodaran)**
-            - URL: [pages.stern.nyu.edu/~adamodar/datafile/ratings.html](https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/ratings.html)
-            - Provides default spreads by rating based on interest coverage ratios
-            - Updated regularly with market data
+            **(1) Academic – Default Spreads by Rating (Damodaran, NYU Stern)**
 
-            **2. Federal Reserve Economic Data (FRED)**
-            - URL: [fred.stlouisfed.org](https://fred.stlouisfed.org/series/BAMLC0A4CBBB)
-            - ICE BofA Corporate Bond Index Option-Adjusted Spreads
-            - Available indices: AAA, AA, A, BBB, BB, B, CCC
-            - Current BBB spread (Jan 2026): ~97 bps
+            "Ratings, Interest Coverage Ratios and Default Spread" - dataset updated
+            regularly, widely used in corporate finance for credit spread benchmarks.
 
-            **3. CDS Index Providers**
-            - **iTraxx Europe**: [S&P iTraxx](https://www.spglobal.com/spdji/en/landing/topic/itraxx/) - 125 IG names
-            - **CDX North America**: [S&P CDX](https://www.spglobal.com/spdji/en/landing/topic/cdx-tradable-cds-indices/)
-            - Historical ratio Xover/Main ≈ 5x (HY trades ~5x wider than IG)
+            🔗 `https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/ratings.html`
 
-            **4. Regulatory Framework (BIS/Basel)**
-            - URL: [bis.org/basel_framework](https://www.bis.org/basel_framework/chapter/CRE/22.htm)
-            - Credit Risk Mitigation (CRE22) and haircut floors by rating
-            - SA-CCR methodology for counterparty credit risk
+            **(2) Market Data – ICE BofA Option-Adjusted Spreads (via FRED)**
 
-            **5. Rating Agency Default Studies**
-            - **Moody's**: Annual default studies with transition matrices
-            - **S&P**: Global corporate default rates by rating
-            - Historical spec-grade default rate average: ~3.4% (since 1996)
+            The Federal Reserve publishes daily OAS series by rating category
+            (ICE BofA AAA, AA, A, BBB, BB, B, CCC indices). These provide real-time
+            market benchmarks for IG and HY spreads.
+
+            🔗 `https://fred.stlouisfed.org/series/BAMLC0A4CBBB` (BBB example)
+
+            **(3) CDS Indices – iTraxx / CDX (IHS Markit)**
+
+            Standard CDS index families: iTraxx Europe (125 IG names),
+            iTraxx Crossover (75 sub-IG names), CDX.NA.IG/HY (North America).
+            These indices define the "IG vs HY" boundary used in practice.
+
+            🔗 `https://www.spglobal.com/spdji/en/landing/topic/itraxx/`
+
+            ---
+
+            ### Pedagogical Positioning
+
+            ⚠️ **Important disclaimer for this educational project:**
+
+            - The spreads by rating are used as **pedagogical proxies** to construct
+              a hazard rate curve for CVA/DVA calculations.
+            - This is **not** a regulatory-prescribed methodology — real-world CVA
+              desks use more sophisticated calibration (CDS curves, term structure, etc.).
+            - The conversion λ ≈ spread / LGD assumes a flat CDS curve and constant
+              recovery, which is a standard simplification for educational purposes.
+            - Ranges are provided instead of point estimates to reflect that market
+              spreads vary significantly with economic conditions.
             """)
 
     with doc_tab3:
