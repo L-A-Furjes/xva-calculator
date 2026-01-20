@@ -232,12 +232,16 @@ class MonteCarloEngine:
         )
 
         # Package paths data for instrument pricing
+        # Include r0 values for deterministic t=0 pricing
         paths_data = {
             "r_domestic": r_domestic,
             "r_foreign": r_foreign,
             "fx_spot": fx_spot,
             "df_domestic": df_domestic,
             "df_foreign": df_foreign,
+            "r0_domestic": ir_dom.r0,  # For deterministic t=0 pricing
+            "r0_foreign": ir_for.r0,
+            "fx0": fx_model.S0,
         }
 
         # Calculate portfolio MTM at each time step
@@ -293,7 +297,7 @@ class MonteCarloEngine:
         self,
         instruments: Sequence[Instrument],
         paths_data: dict[str, PathArray],
-        deterministic_t0: bool = False,
+        deterministic_t0: bool = False,  # Kept for API compatibility
     ) -> PathArray:
         """
         Calculate portfolio MTM at each time step.
@@ -303,15 +307,20 @@ class MonteCarloEngine:
         instruments : Sequence[Instrument]
             Portfolio of instruments
         paths_data : dict
-            Simulated market data paths
+            Simulated market data paths. Includes r0_domestic/r0_foreign
+            for deterministic t=0 pricing.
         deterministic_t0 : bool
-            If True, make V(0) deterministic (same for all paths).
-            This is correct for xVA: today's MTM is known exactly.
+            Deprecated - t=0 is now always deterministic when r0 is available.
 
         Returns
         -------
         PathArray
             Portfolio MTM, shape (n_paths, n_steps)
+
+        Notes
+        -----
+        At t=0, instruments use deterministic DFs from the flat curve (r0),
+        not path-dependent DFs. This is correct for xVA: today's MTM is known.
         """
         mtm = np.zeros((self.n_paths, self._n_steps))
 
@@ -324,10 +333,9 @@ class MonteCarloEngine:
                 )
                 mtm[:, time_idx] += inst_mtm
 
-        # Make t=0 deterministic if requested
-        # Rationale: V(0) = today's MTM, which is known (not stochastic)
-        # For xVA, only V(t) for t>0 has uncertainty
-        if deterministic_t0:
+        # Note: t=0 is now deterministic by design (instruments use r0)
+        # The old averaging hack has been removed
+        if deterministic_t0 and False:  # Disabled - kept for reference
             mtm[:, 0] = mtm[:, 0].mean()
 
         return mtm

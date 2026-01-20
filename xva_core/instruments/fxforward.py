@@ -107,6 +107,8 @@ class FXForward(Instrument):
             - 'fx_spot': FX spot paths
             - 'df_domestic': Domestic cumulative DFs
             - 'df_foreign': Foreign cumulative DFs
+            Optionally for deterministic t=0 pricing:
+            - 'r0_domestic', 'r0_foreign', 'fx0'
 
         Returns
         -------
@@ -120,36 +122,49 @@ class FXForward(Instrument):
             n_paths = paths_data["fx_spot"].shape[0]
             return np.zeros(n_paths)
 
-        fx_spot = paths_data["fx_spot"][:, time_idx]
         df_dom_cumulative = paths_data["df_domestic"]
         df_for_cumulative = paths_data["df_foreign"]
-        n_paths = fx_spot.shape[0]
+        n_paths = df_dom_cumulative.shape[0]
 
-        # Find maturity index
-        mat_idx = np.searchsorted(time_grid, self.maturity)
-        mat_idx = min(mat_idx, len(time_grid) - 1)
+        # At t=0: use DETERMINISTIC values (today's market is known)
+        if time_idx == 0 and "r0_domestic" in paths_data:
+            r0_d = paths_data["r0_domestic"]
+            r0_f = paths_data["r0_foreign"]
+            fx0 = paths_data["fx0"]
 
-        # Forward discount factors DF(t, T) = DF(0, T) / DF(0, t)
-        df_dom_t = df_dom_cumulative[:, time_idx]
-        df_dom_T = df_dom_cumulative[:, mat_idx]
-        df_dom_t = np.maximum(df_dom_t, 1e-10)
-        df_dom_forward = df_dom_T / df_dom_t
+            # Deterministic DFs
+            df_dom_forward = np.exp(-r0_d * self.maturity)
+            df_for_forward = np.exp(-r0_f * self.maturity)
 
-        df_for_t = df_for_cumulative[:, time_idx]
-        df_for_T = df_for_cumulative[:, mat_idx]
-        df_for_t = np.maximum(df_for_t, 1e-10)
-        df_for_forward = df_for_T / df_for_t
+            # Deterministic FX spot at t=0
+            fx_spot = np.full(n_paths, fx0)
+
+            df_dom_forward = np.full(n_paths, df_dom_forward)
+            df_for_forward = np.full(n_paths, df_for_forward)
+        else:
+            # Path-dependent pricing for t>0
+            fx_spot = paths_data["fx_spot"][:, time_idx]
+
+            mat_idx = np.searchsorted(time_grid, self.maturity)
+            mat_idx = min(mat_idx, len(time_grid) - 1)
+
+            df_dom_t = df_dom_cumulative[:, time_idx]
+            df_dom_T = df_dom_cumulative[:, mat_idx]
+            df_dom_t = np.maximum(df_dom_t, 1e-10)
+            df_dom_forward = df_dom_T / df_dom_t
+
+            df_for_t = df_for_cumulative[:, time_idx]
+            df_for_T = df_for_cumulative[:, mat_idx]
+            df_for_t = np.maximum(df_for_t, 1e-10)
+            df_for_forward = df_for_T / df_for_t
 
         # PV = N_f × S(t) × DF_f(t,T) - K × N_f × DF_d(t,T)
-        # For buy foreign (receive foreign, pay domestic):
         pv_foreign_leg = self.notional_foreign * fx_spot * df_for_forward
         pv_domestic_leg = self.notional_domestic * df_dom_forward
 
         if self.buy_foreign:
-            # We receive foreign, pay domestic
             mtm = pv_foreign_leg - pv_domestic_leg
         else:
-            # We receive domestic, pay foreign
             mtm = pv_domestic_leg - pv_foreign_leg
 
         return mtm

@@ -518,75 +518,24 @@ def _calculate_par_swap_rate(
     return numerator / denominator
 
 
-def _calculate_mc_par_rate(
-    config: dict, maturity: float = 5.0, freq: float = 0.5
+def _calculate_deterministic_par_rate(
+    r0: float, maturity: float = 5.0, freq: float = 0.5
 ) -> float:
     """
-    Calculate par swap rate using Monte Carlo simulation.
+    Calculate par swap rate using deterministic flat curve.
 
-    This accounts for the OU dynamics and gives the true ATM rate
-    that makes E[V(0)] = 0 under the simulation model.
+    This gives K such that PV0(K) = 0 exactly using the same
+    pricing routine as the simulator. No MC needed.
     """
-    from xva_core.config.models import (
-        CorrelationConfig,
-        FXModelConfig,
-        MarketConfig,
-        OUModelConfig,
-    )
-
-    # Build market config from current settings
-    market_config = MarketConfig(
-        domestic_rate_model=OUModelConfig(
-            r0=config.get("theta_d", 0.02),  # Start at long-term mean
-            kappa=config.get("kappa_d", 0.1),
-            theta=config.get("theta_d", 0.02),
-            sigma=config.get("sigma_d", 0.01),
-        ),
-        foreign_rate_model=OUModelConfig(
-            r0=config.get("theta_f", 0.01),
-            kappa=config.get("kappa_f", 0.15),
-            theta=config.get("theta_f", 0.01),
-            sigma=config.get("sigma_f", 0.01),
-        ),
-        fx_model=FXModelConfig(
-            spot=config.get("fx_spot", 1.10),
-            sigma=config.get("fx_vol", 0.10),
-        ),
-        correlations=CorrelationConfig(
-            ir_domestic_foreign=config.get("corr_ir", 0.6),
-            ir_domestic_fx=config.get("corr_ir_fx", -0.2),
-            ir_foreign_fx=config.get("corr_rf_fx", 0.1),
-        ),
-    )
-
-    # Create a dummy swap with any rate (we'll use it to compute par rate)
+    # Create a dummy swap to use its par rate calculation
     dummy_swap = IRSwap(
         notional=10_000_000,
-        fixed_rate=0.02,  # Doesn't matter, we use par_rate method
+        fixed_rate=0.02,  # Doesn't matter
         maturity=maturity,
         pay_fixed=True,
         payment_freq=freq,
     )
-
-    # Run quick simulation (fewer paths for speed)
-    dt = 0.25 if freq >= 0.25 else freq
-    engine = MonteCarloEngine(
-        n_paths=2000,  # Enough for reasonable estimate
-        horizon=maturity,
-        dt=dt,
-        seed=42,
-    )
-    result = engine.simulate([dummy_swap], market_config, deterministic_t0=False)
-
-    # Get par rates at t=0 for all paths
-    par_rates = dummy_swap.par_rate(
-        time_idx=0,
-        time_grid=result.time_grid,
-        paths_data=result.paths_data,
-    )
-
-    # Return mean par rate across all paths
-    return float(np.mean(par_rates))
+    return dummy_swap.calculate_par_rate_deterministic(r0)
 
 
 def _apply_portfolio_preset(preset: str, config: dict) -> None:
@@ -595,15 +544,10 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         # ===== BELL CURVE DEMO =====
         # Single ATM IRS, VM/IM disabled, clean setup for classic EPE hump
 
-        # Calculate TRUE par rate using Monte Carlo (accounts for OU dynamics)
-        # This makes E[V(0)] = 0 under the simulation model
-        with st.spinner("Calculating MC par rate..."):
-            try:
-                par_rate = _calculate_mc_par_rate(config, maturity=5.0, freq=0.5)
-            except Exception:
-                # Fallback to flat curve if MC fails
-                r0 = config.get("theta_d", 0.02)
-                par_rate = _calculate_par_swap_rate(r0, maturity=5.0, freq=0.5)
+        # Calculate par rate using DETERMINISTIC flat curve
+        # This is the proper fix: PV0(K_par) = 0 exactly, using same pricing as simulator
+        r0 = config.get("theta_d", 0.02)
+        par_rate = _calculate_deterministic_par_rate(r0, maturity=5.0, freq=0.5)
         par_rate_pct = par_rate * 100  # As percentage
 
         # Set single ATM swap with calculated par rate
@@ -907,8 +851,10 @@ def exposure_tab(config: dict) -> None:
     with col3:
         # Use AUC-based reduction with guard for small denominators
         times = r["sim_result"].time_grid
-        auc_uncoll = np.trapz(r["epe_uncoll"], times)
-        auc_coll = np.trapz(r["epe_coll"], times)
+        # np.trapz renamed to np.trapezoid in NumPy 2.0
+        trapz_fn = getattr(np, "trapezoid", np.trapz)
+        auc_uncoll = trapz_fn(r["epe_uncoll"], times)
+        auc_coll = trapz_fn(r["epe_coll"], times)
         if auc_uncoll < 1e-6:  # Guard against tiny/zero AUC
             st.metric("Collateral Benefit", "N/A", help="EPE too small to measure")
         else:

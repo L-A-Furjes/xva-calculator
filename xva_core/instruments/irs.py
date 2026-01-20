@@ -120,6 +120,7 @@ class IRSwap(Instrument):
             Time grid in years
         paths_data : dict
             Must contain 'df_domestic' (cumulative discount factors)
+            Optionally 'r0_domestic' for deterministic t=0 pricing
 
         Returns
         -------
@@ -143,38 +144,103 @@ class IRSwap(Instrument):
         if len(remaining_dates) == 0:
             return np.zeros(n_paths)
 
-        # Find indices for remaining payment dates (interpolate to nearest)
-        cf_indices = np.searchsorted(time_grid, remaining_dates)
-        cf_indices = np.clip(cf_indices, 0, len(time_grid) - 1)
+        # At t=0: use DETERMINISTIC discount factors (today's curve is known)
+        # At t>0: use path-dependent discount factors
+        if time_idx == 0 and "r0_domestic" in paths_data:
+            # Deterministic pricing at t=0 using flat curve
+            r0 = paths_data["r0_domestic"]
+            forward_df = np.exp(-r0 * remaining_dates)  # Shape: (n_payments,)
+            forward_df = np.tile(forward_df, (n_paths, 1))  # Broadcast to all paths
+            df_maturity_fwd = np.exp(-r0 * self.maturity)
+            df_maturity_fwd = np.full(n_paths, df_maturity_fwd)
+        else:
+            # Path-dependent pricing for t>0
+            cf_indices = np.searchsorted(time_grid, remaining_dates)
+            cf_indices = np.clip(cf_indices, 0, len(time_grid) - 1)
 
-        # Calculate forward discount factors from t to each payment date
-        # DF(t, T) = DF(0, T) / DF(0, t)
-        df_t = df_cumulative[:, time_idx : time_idx + 1]
-        df_t = np.maximum(df_t, 1e-10)  # Avoid division by zero
-        df_cf = df_cumulative[:, cf_indices]
-        forward_df = df_cf / df_t
+            df_t = df_cumulative[:, time_idx : time_idx + 1]
+            df_t = np.maximum(df_t, 1e-10)
+            df_cf = df_cumulative[:, cf_indices]
+            forward_df = df_cf / df_t
+
+            maturity_idx = np.searchsorted(time_grid, self.maturity)
+            maturity_idx = min(maturity_idx, len(time_grid) - 1)
+            df_maturity_fwd = df_cumulative[:, maturity_idx] / df_t.flatten()
 
         # Fixed leg PV: N * K * Σ τ * DF(t, Tᵢ)
-        # τ is the accrual fraction for each period
         tau = self.payment_freq
         pv_fixed = self.notional * self.fixed_rate * tau * forward_df.sum(axis=1)
 
         # Float leg PV (approximation): N * [1 - DF(t, T_maturity)]
-        # This is the "par swap" approximation for at-market swaps
-        maturity_idx = np.searchsorted(time_grid, self.maturity)
-        maturity_idx = min(maturity_idx, len(time_grid) - 1)
-        df_maturity = df_cumulative[:, maturity_idx] / df_t.flatten()
-        pv_float = self.notional * (1.0 - df_maturity)
+        pv_float = self.notional * (1.0 - df_maturity_fwd)
 
         # MTM from our perspective
         if self.pay_fixed:
-            # Payer: receive float, pay fixed
             mtm = pv_float - pv_fixed
         else:
-            # Receiver: receive fixed, pay float
             mtm = pv_fixed - pv_float
 
         return mtm
+
+    def calculate_pv0_deterministic(self, r0: float) -> float:
+        """
+        Calculate deterministic PV at t=0 using flat curve.
+
+        This is the true today's MTM, not a Monte Carlo expectation.
+
+        Parameters
+        ----------
+        r0 : float
+            Today's short rate (flat curve level)
+
+        Returns
+        -------
+        float
+            Deterministic PV at t=0
+        """
+        cf_dates = self.get_cash_flow_dates()
+        discount_factors = np.exp(-r0 * cf_dates)
+
+        # Fixed leg PV
+        tau = self.payment_freq
+        pv_fixed = self.notional * self.fixed_rate * tau * discount_factors.sum()
+
+        # Float leg PV
+        df_maturity = np.exp(-r0 * self.maturity)
+        pv_float = self.notional * (1.0 - df_maturity)
+
+        if self.pay_fixed:
+            return float(pv_float - pv_fixed)
+        else:
+            return float(pv_fixed - pv_float)
+
+    def calculate_par_rate_deterministic(self, r0: float) -> float:
+        """
+        Calculate par rate using deterministic flat curve.
+
+        This gives K such that PV0(K) = 0 exactly.
+
+        Parameters
+        ----------
+        r0 : float
+            Today's short rate (flat curve level)
+
+        Returns
+        -------
+        float
+            Par swap rate
+        """
+        cf_dates = self.get_cash_flow_dates()
+        discount_factors = np.exp(-r0 * cf_dates)
+
+        # Par rate: K = (1 - DF(T)) / (τ * Σ DF(Ti))
+        df_maturity = np.exp(-r0 * self.maturity)
+        annuity = self.payment_freq * discount_factors.sum()
+
+        if annuity < 1e-10:
+            return r0
+
+        return float((1.0 - df_maturity) / annuity)
 
     def par_rate(
         self,
