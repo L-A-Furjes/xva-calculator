@@ -409,7 +409,12 @@ def run_simulation(config: dict) -> None:
         # Build configs
         market_config = build_market_config(config)
 
-        dt = 1 / 12 if config["freq"] == "Monthly" else 0.25
+        # Bell curve mode: use dt=0.5 to align with semi-annual payment dates
+        # This removes sawtooth artifacts and shows cleaner bell shape
+        if st.session_state.get("bell_curve_mode"):
+            dt = 0.5
+        else:
+            dt = 1 / 12 if config["freq"] == "Monthly" else 0.25
 
         # Run Monte Carlo
         engine = MonteCarloEngine(
@@ -2744,6 +2749,11 @@ def stress_test_tab(config: dict) -> None:
             instruments = irs_list + fxf_list
 
             market_config = build_market_config(stressed_config)
+            # Bell curve mode: use dt=0.5 to align with semi-annual payment dates
+        # This removes sawtooth artifacts and shows cleaner bell shape
+        if st.session_state.get("bell_curve_mode"):
+            dt = 0.5
+        else:
             dt = 1 / 12 if config["freq"] == "Monthly" else 0.25
 
             engine = MonteCarloEngine(
@@ -3017,6 +3027,11 @@ def sensitivities_tab(config: dict) -> None:
             instruments = irs_list + fxf_list
 
             market_config = build_market_config(bumped_config)
+            # Bell curve mode: use dt=0.5 to align with semi-annual payment dates
+        # This removes sawtooth artifacts and shows cleaner bell shape
+        if st.session_state.get("bell_curve_mode"):
+            dt = 0.5
+        else:
             dt = 1 / 12 if config["freq"] == "Monthly" else 0.25
 
             engine = MonteCarloEngine(
