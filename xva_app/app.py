@@ -852,9 +852,12 @@ def exposure_tab(config: dict) -> None:
         # Use AUC-based reduction with guard for small denominators
         times = r["sim_result"].time_grid
         # np.trapz renamed to np.trapezoid in NumPy 2.0
-        trapz_fn = getattr(np, "trapezoid", np.trapz)
-        auc_uncoll = trapz_fn(r["epe_uncoll"], times)
-        auc_coll = trapz_fn(r["epe_coll"], times)
+        if hasattr(np, "trapezoid"):
+            auc_uncoll = np.trapezoid(r["epe_uncoll"], times)
+            auc_coll = np.trapezoid(r["epe_coll"], times)
+        else:
+            auc_uncoll = np.trapz(r["epe_uncoll"], times)
+            auc_coll = np.trapz(r["epe_coll"], times)
         if auc_uncoll < 1e-6:  # Guard against tiny/zero AUC
             st.metric("Collateral Benefit", "N/A", help="EPE too small to measure")
         else:
