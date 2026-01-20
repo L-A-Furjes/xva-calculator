@@ -84,6 +84,18 @@ def main() -> None:
     if "run_count" not in st.session_state:
         st.session_state.run_count = 0
 
+    # Apply preset slider values BEFORE sidebar renders (Streamlit requirement)
+    if st.session_state.get("apply_preset") == "bell_curve_slow":
+        # Set slider values for slow MR preset
+        st.session_state.kappa_d = 0.03
+        st.session_state.sigma_d = 200  # bps
+    elif st.session_state.get("apply_preset") in ["mixed", "clear"]:
+        # Reset to defaults by deleting keys
+        if "kappa_d" in st.session_state:
+            del st.session_state["kappa_d"]
+        if "sigma_d" in st.session_state:
+            del st.session_state["sigma_d"]
+
     # Sidebar configuration
     config = build_sidebar()
 
@@ -589,12 +601,9 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         # ===== BELL CURVE (SLOW MR) =====
         # Same as bell_curve but with slower mean reversion and higher vol
         # This shifts the EPE peak from ~0.5Y towards ~2Y for a more "textbook" bell
+        # Note: slider values are set in main() BEFORE sidebar renders
 
-        # Directly set slider values (Streamlit reads from session_state keys)
-        st.session_state.kappa_d = 0.03
-        st.session_state.sigma_d = 200  # bps (slider uses bps)
-
-        # Also store flags for reference
+        # Store flags for reference
         st.session_state.bell_slow_kappa = 0.03
         st.session_state.bell_slow_sigma = 200
 
@@ -653,11 +662,7 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         st.session_state.bell_curve_slow_mode = False
         st.session_state.bell_slow_kappa = None
         st.session_state.bell_slow_sigma = None
-        # Reset market model sliders to defaults
-        if "kappa_d" in st.session_state:
-            del st.session_state["kappa_d"]
-        if "sigma_d" in st.session_state:
-            del st.session_state["sigma_d"]
+        # Note: slider values are reset in main() BEFORE sidebar renders
 
     elif preset == "clear":
         # ===== CLEAR ALL =====
@@ -681,11 +686,7 @@ def _apply_portfolio_preset(preset: str, config: dict) -> None:
         st.session_state.bell_curve_slow_mode = False
         st.session_state.bell_slow_kappa = None
         st.session_state.bell_slow_sigma = None
-        # Reset market model sliders to defaults
-        if "kappa_d" in st.session_state:
-            del st.session_state["kappa_d"]
-        if "sigma_d" in st.session_state:
-            del st.session_state["sigma_d"]
+        # Note: slider values are reset in main() BEFORE sidebar renders
 
 
 def portfolio_tab(config: dict) -> None:
