@@ -3481,68 +3481,73 @@ def methodology_tab(config: dict) -> None:
         st.markdown("""
             ### Credit Spreads by Rating - Methodology
 
-            The hazard rate $\\lambda$ (probability of default intensity) is derived from
-            market CDS spreads using the simplified approximation:
+            **Hazard rate derivation (flat spread / flat hazard approximation):**
 
-            $$\\lambda \\approx \\frac{\\text{CDS Spread}}{1 - R}$$
+            $$\\lambda \\approx \\frac{s}{\\text{LGD}}$$
 
-            Where $R$ is the recovery rate (typically 40%, so LGD = 60%).
+            Where:
+            - $s$ = CDS spread in decimal (e.g., 100 bps = 0.01)
+            - $\\text{LGD}$ = Loss Given Default = 60% (i.e., Recovery $R$ = 40%)
+            - $\\lambda$ = constant hazard rate (intensity of default)
+
+            This is a standard simplification assuming **flat spread** and **flat hazard rate**
+            (no term structure). Real-world CVA desks use full CDS term structures.
 
             **Spread ranges used in this application:**
 
-            | Rating | App Range (bps) | Academic Ref. (bps) | Hazard Rate (LGD=60%) |
-            |--------|-----------------|---------------------|----------------------|
-            | AAA    | 20 - 50         | ~40                 | 0.33% - 0.83%        |
-            | AA     | 40 - 80         | ~55                 | 0.67% - 1.33%        |
-            | A      | 60 - 120        | 70 - 89             | 1.00% - 2.00%        |
-            | BBB    | 100 - 200       | ~111                | 1.67% - 3.33%        |
-            | BB     | 200 - 400       | 138 - 184           | 3.33% - 6.67%        |
-            | B      | 400 - 800       | 275 - 509           | 6.67% - 13.33%       |
+            | Rating | App Range (bps) | Academic Ref. (bps) | λ (LGD=60%) |
+            |--------|-----------------|---------------------|-------------|
+            | AAA    | 20 - 50         | ~40                 | 0.33 - 0.83% |
+            | AA     | 40 - 80         | ~55                 | 0.67 - 1.33% |
+            | A      | 60 - 120        | 70 - 89             | 1.00 - 2.00% |
+            | BBB    | 100 - 200       | ~111                | 1.67 - 3.33% |
+            | BB     | 200 - 400       | 138 - 184           | 3.33 - 6.67% |
+            | B      | 400 - 800       | 275 - 509           | 6.67 - 13.33% |
 
-            **Calibration approach**: Ranges are intentionally wider than point estimates
-            to cover market variability across credit cycles.
+            **Calibration**: Ranges are wider than point estimates to cover market
+            variability across credit cycles (expansion/recession).
 
             ---
 
-            ### Sources & References
+            ### Sources & References (Traceable)
 
-            **(1) Academic – Default Spreads by Rating (Damodaran, NYU Stern)**
+            **(1) Damodaran, A. (NYU Stern) – "Ratings and Default Spreads"**
 
-            "Ratings, Interest Coverage Ratios and Default Spread" - dataset updated
-            regularly, widely used in corporate finance for credit spread benchmarks.
+            Dataset: "Ratings, Interest Coverage Ratios and Default Spread"
+            Updated annually. Widely used in corporate finance education.
 
             🔗 `https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/ratings.html`
+            *(Accessed: January 2025)*
 
-            **(2) Market Data – ICE BofA Option-Adjusted Spreads (via FRED)**
+            **(2) FRED – ICE BofA Corporate Bond OAS Indices**
 
-            The Federal Reserve publishes daily OAS series by rating category
-            (ICE BofA AAA, AA, A, BBB, BB, B, CCC indices). These provide real-time
-            market benchmarks for IG and HY spreads.
+            Series: ICE BofA US Corporate BBB Option-Adjusted Spread
+            Ticker: BAMLC0A4CBBB (also available: AAA, AA, A, BB, B, CCC)
+            Provider: ICE Data Indices, LLC
 
-            🔗 `https://fred.stlouisfed.org/series/BAMLC0A4CBBB` (BBB example)
+            🔗 `https://fred.stlouisfed.org/series/BAMLC0A4CBBB`
+            *(Accessed: January 2025)*
 
-            **(3) CDS Indices – iTraxx / CDX (IHS Markit)**
+            **(3) IHS Markit – CDS Indices Primer**
 
-            Standard CDS index families: iTraxx Europe (125 IG names),
-            iTraxx Crossover (75 sub-IG names), CDX.NA.IG/HY (North America).
-            These indices define the "IG vs HY" boundary used in practice.
+            Document: "Credit Default Swap Index (CDX/iTraxx) – Product Guide"
+            Defines: iTraxx Europe (125 IG), iTraxx Crossover (75 sub-IG),
+            CDX.NA.IG, CDX.NA.HY
 
             🔗 `https://www.spglobal.com/spdji/en/landing/topic/itraxx/`
+            *(Accessed: January 2025)*
 
             ---
 
-            ### Pedagogical Positioning
+            ### Pedagogical Disclaimer
 
-            ⚠️ **Important disclaimer for this educational project:**
+            ⚠️ **This is an educational project – not production CVA:**
 
-            - The spreads by rating are used as **pedagogical proxies** to construct
-              a hazard rate curve for CVA/DVA calculations.
-            - This is **not** a regulatory-prescribed methodology — real-world CVA
-              desks use more sophisticated calibration (CDS curves, term structure, etc.).
-            - The conversion λ ≈ spread / LGD assumes a flat CDS curve and constant
-              recovery, which is a standard simplification for educational purposes.
-            - Ranges are provided instead of point estimates to reflect that market
-              spreads vary significantly with economic conditions.
+            - Spreads by rating are **pedagogical proxies** for hazard curve construction.
+            - We use a **flat spread / flat hazard** approximation (no term structure).
+            - LGD is fixed at **60%** (standard recovery assumption for senior unsecured).
+            - Real CVA desks calibrate to full CDS curves, use stochastic recovery, etc.
+            - Ranges (not point estimates) reflect that spreads vary with market conditions.
             """)
 
     with doc_tab3:
