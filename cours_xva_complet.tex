@@ -1,0 +1,924 @@
+\documentclass[11pt,a4paper]{article}
+
+% ============================================================================
+% PACKAGES
+% ============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+% ============================================================================
+% COULEURS
+% ============================================================================
+\definecolor{darkblue}{RGB}{0, 51, 102}
+\definecolor{lightblue}{RGB}{230, 242, 255}
+\definecolor{darkgreen}{RGB}{0, 100, 0}
+\definecolor{lightgreen}{RGB}{230, 255, 230}
+\definecolor{darkred}{RGB}{150, 0, 0}
+\definecolor{lightred}{RGB}{255, 230, 230}
+\definecolor{darkorange}{RGB}{200, 100, 0}
+\definecolor{lightorange}{RGB}{255, 245, 230}
+\definecolor{darkpurple}{RGB}{75, 0, 130}
+\definecolor{lightpurple}{RGB}{245, 230, 255}
+
+% ============================================================================
+% BOÎTES PERSONNALISÉES
+% ============================================================================
+\tcbset{
+    boxrule=1pt,
+    arc=3mm,
+    fonttitle=\bfseries
+}
+
+\newtcolorbox{definition}[1]{
+    colback=lightblue,
+    colframe=darkblue,
+    title=#1
+}
+
+\newtcolorbox{exemple}[1]{
+    colback=lightgreen,
+    colframe=darkgreen,
+    title=Exemple : #1
+}
+
+\newtcolorbox{attention}[1]{
+    colback=lightred,
+    colframe=darkred,
+    title=#1
+}
+
+\newtcolorbox{formule}[1]{
+    colback=lightorange,
+    colframe=darkorange,
+    title=Formule : #1
+}
+
+\newtcolorbox{resume}[1]{
+    colback=lightpurple,
+    colframe=darkpurple,
+    title=#1
+}
+
+% ============================================================================
+% EN-TÊTE
+% ============================================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{darkblue}{Cours xVA - De Zéro à la Compréhension}}
+\fancyhead[R]{\textcolor{darkblue}{\thepage}}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% ============================================================================
+% DOCUMENT
+% ============================================================================
+\begin{document}
+
+% --------------------------------------------------------------------------
+% PAGE DE TITRE
+% --------------------------------------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Huge\bfseries\textcolor{darkblue}{Comprendre les xVA}}\\[0.5cm]
+{\LARGE\textcolor{darkblue}{De Zéro à la Maîtrise}}\\[1cm]
+
+{\Large Cours Complet avec Exemples Simples}\\[2cm]
+
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=lightblue, minimum width=12cm, minimum height=3cm, align=center] {
+    {\Large\textbf{Ce que tu vas apprendre :}}\\[0.3cm]
+    Produits dérivés $\bullet$ Risque de contrepartie $\bullet$ Exposition\\
+    Collatéral $\bullet$ Monte Carlo $\bullet$ CVA, DVA, FVA, MVA, KVA $\bullet$ SA-CCR
+};
+\end{tikzpicture}
+
+\vfill
+
+{\large Préparation à la présentation de l'application xVA Calculator}\\[1cm]
+{\large\today}
+
+\end{titlepage}
+
+% --------------------------------------------------------------------------
+% TABLE DES MATIÈRES
+% --------------------------------------------------------------------------
+\tableofcontents
+\newpage
+
+% ============================================================================
+% CHAPITRE 1 : LES BASES
+% ============================================================================
+\section{Les Bases : C'est quoi un Produit Dérivé ?}
+
+\subsection{Définition Simple}
+
+\begin{definition}{Produit Dérivé}
+Un \textbf{produit dérivé} est un contrat financier dont la valeur \textbf{dépend} (dérive) d'un autre actif appelé "sous-jacent".
+
+\vspace{0.3cm}
+\textbf{Exemples de sous-jacents :}
+\begin{itemize}
+    \item Taux d'intérêt (ex: Euribor, OIS)
+    \item Taux de change (ex: EUR/USD)
+    \item Actions (ex: CAC40)
+    \item Matières premières (ex: pétrole)
+\end{itemize}
+\end{definition}
+
+\subsection{Les Deux Produits de Notre Application}
+
+Notre application gère deux types de produits dérivés :
+
+\subsubsection{1. Le Swap de Taux d'Intérêt (IRS)}
+
+\begin{definition}{Interest Rate Swap (IRS)}
+Un \textbf{swap de taux} est un accord entre deux parties pour \textbf{échanger des flux d'intérêts} pendant une certaine durée.
+
+\begin{itemize}
+    \item \textbf{Une partie paie un taux fixe} (ex: 2\% par an)
+    \item \textbf{L'autre partie paie un taux variable} (ex: Euribor)
+\end{itemize}
+\end{definition}
+
+\begin{exemple}{Swap de Taux}
+\textbf{Situation :} Banque A et Entreprise B signent un swap sur 10 millions d'euros pendant 5 ans.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+    \node[draw, rounded corners, fill=lightblue, minimum width=3cm, minimum height=1.5cm] (A) at (0,0) {\textbf{Banque A}};
+    \node[draw, rounded corners, fill=lightgreen, minimum width=3cm, minimum height=1.5cm] (B) at (8,0) {\textbf{Entreprise B}};
+
+    \draw[->, very thick, darkred] (A.east) -- node[above] {Paie taux fixe 2\%} (B.west);
+    \draw[->, very thick, darkgreen] (B.west) ++(0,-0.3) -- node[below] {Paie taux variable (Euribor)} ($(A.east)+(0,-0.3)$);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Chaque année :}
+\begin{itemize}
+    \item Banque A paie : $10\,000\,000 \times 2\% = 200\,000$ EUR (fixe)
+    \item Entreprise B paie : $10\,000\,000 \times \text{Euribor}$ (variable)
+\end{itemize}
+
+\textbf{Si Euribor = 1.5\% :} Banque A paie 200k, reçoit 150k $\Rightarrow$ perd 50k\\
+\textbf{Si Euribor = 3\% :} Banque A paie 200k, reçoit 300k $\Rightarrow$ gagne 100k
+\end{exemple}
+
+\subsubsection{2. Le Forward de Change (FX Forward)}
+
+\begin{definition}{FX Forward}
+Un \textbf{forward de change} est un accord pour \textbf{échanger des devises à une date future} à un taux fixé aujourd'hui.
+\end{definition}
+
+\begin{exemple}{FX Forward}
+\textbf{Situation :} Aujourd'hui, le taux EUR/USD est 1.10 (1 EUR = 1.10 USD).
+
+Une entreprise française signe un forward pour acheter 1 million d'EUR dans 1 an au taux de 1.12.
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw, rounded corners, fill=lightblue, minimum width=10cm, minimum height=1.2cm, align=center] at (0,0) {
+        Dans 1 an : L'entreprise paiera \textbf{1,120,000 USD} pour recevoir \textbf{1,000,000 EUR}
+    };
+\end{tikzpicture}
+\end{center}
+
+\textbf{Dans 1 an, si EUR/USD = 1.20 :}
+\begin{itemize}
+    \item Prix marché : 1,200,000 USD pour 1M EUR
+    \item Prix forward : 1,120,000 USD pour 1M EUR
+    \item \textbf{Gain : 80,000 USD} (on achète moins cher que le marché)
+\end{itemize}
+
+\textbf{Dans 1 an, si EUR/USD = 1.05 :}
+\begin{itemize}
+    \item Prix marché : 1,050,000 USD pour 1M EUR
+    \item Prix forward : 1,120,000 USD pour 1M EUR
+    \item \textbf{Perte : 70,000 USD} (on achète plus cher que le marché)
+\end{itemize}
+\end{exemple}
+
+\newpage
+% ============================================================================
+% CHAPITRE 2 : RISQUE DE CONTREPARTIE
+% ============================================================================
+\section{Le Risque de Contrepartie}
+
+\subsection{C'est quoi le Risque de Contrepartie ?}
+
+\begin{definition}{Risque de Contrepartie}
+Le \textbf{risque de contrepartie} est le risque que l'autre partie du contrat \textbf{fasse défaut} (faillite) et ne puisse pas honorer ses obligations.
+\end{definition}
+
+\begin{exemple}{Illustration du Risque}
+Tu as un swap avec la banque XYZ. Le swap vaut +500,000 EUR pour toi (la banque te doit de l'argent).
+
+\textbf{Scénario 1 : Tout va bien}\\
+La banque XYZ paie ce qu'elle doit. Tu reçois tes 500,000 EUR.
+
+\textbf{Scénario 2 : La banque fait faillite}\\
+La banque XYZ fait défaut. Tu ne reçois que 40\% de ce qu'on te doit (taux de recouvrement).\\
+Tu perds : $500\,000 \times (1 - 40\%) = 300\,000$ EUR
+\end{exemple}
+
+\begin{attention}{Point Clé}
+Le risque de contrepartie n'existe que si le contrat a une \textbf{valeur positive pour nous}.
+
+Si le contrat vaut -500,000 EUR (nous devons de l'argent), c'est \textbf{l'autre} qui a un risque sur nous !
+\end{attention}
+
+\subsection{Deux Termes Importants}
+
+\begin{definition}{LGD - Loss Given Default}
+\textbf{LGD} (Loss Given Default) = Perte en cas de défaut.
+
+C'est le pourcentage qu'on perd si la contrepartie fait faillite.
+
+$$\text{LGD} = 1 - \text{Taux de Recouvrement}$$
+
+\textbf{Exemple :} Si on récupère 40\% en cas de faillite, LGD = 60\%.
+\end{definition}
+
+\begin{definition}{Hazard Rate (Taux de Défaut)}
+Le \textbf{hazard rate} ($\lambda$) est la probabilité \textbf{instantanée} de défaut.
+
+\textbf{Exemple simplifié :} $\lambda = 1.2\%$ par an signifie environ 1.2\% de chance de défaut chaque année.
+
+La \textbf{probabilité de survie} jusqu'au temps $t$ est :
+$$S(t) = e^{-\lambda \times t}$$
+\end{definition}
+
+\begin{exemple}{Calcul de Probabilité de Survie}
+Contrepartie avec $\lambda = 2\%$ par an.
+
+\textbf{Probabilité de survie à 5 ans :}
+$$S(5) = e^{-0.02 \times 5} = e^{-0.10} \approx 90.5\%$$
+
+\textbf{Probabilité de défaut dans les 5 ans :}
+$$PD(5) = 1 - S(5) = 1 - 90.5\% = 9.5\%$$
+\end{exemple}
+
+\newpage
+% ============================================================================
+% CHAPITRE 3 : EXPOSITION
+% ============================================================================
+\section{L'Exposition : Combien On Peut Perdre ?}
+
+\subsection{Le Problème}
+
+La valeur d'un dérivé \textbf{change tous les jours} car les taux bougent. Donc notre risque change aussi !
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    \draw[->] (0,0) -- (12,0) node[right] {Temps};
+    \draw[->] (0,-2) -- (0,3) node[above] {Valeur du swap};
+    \draw[dashed] (0,0) -- (12,0);
+
+    \draw[very thick, darkblue] plot[smooth] coordinates {
+        (0,0.5) (1,1) (2,0.8) (3,1.5) (4,2) (5,1.8) (6,1) (7,0.5) (8,-0.5) (9,0.3) (10,0.8) (11,0.2)
+    };
+
+    \fill[lightgreen, opacity=0.3] (0,0) -- plot[smooth] coordinates {
+        (0,0.5) (1,1) (2,0.8) (3,1.5) (4,2) (5,1.8) (6,1) (7,0.5) (8,0)
+    } -- (8,0) -- cycle;
+
+    \fill[lightred, opacity=0.3] (8,0) -- plot[smooth] coordinates {
+        (8,-0.5) (9,0)
+    } -- (9,0) -- cycle;
+
+    \node[darkgreen] at (4,2.5) {Valeur positive = ON a un risque};
+    \node[darkred] at (8,-1.5) {Valeur négative = EUX ont un risque};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Les Métriques d'Exposition}
+
+Comme on ne sait pas ce que le futur nous réserve, on \textbf{simule des milliers de scénarios} et on calcule des statistiques.
+
+\begin{definition}{EPE - Expected Positive Exposure}
+\textbf{EPE} = Exposition Positive Moyenne
+
+C'est la \textbf{moyenne} de notre exposition quand elle est positive (= quand on a un risque).
+
+$$\text{EPE}(t) = \mathbb{E}[\max(V_t, 0)]$$
+
+\textbf{En français :} "En moyenne, combien nous doit la contrepartie à la date $t$ ?"
+\end{definition}
+
+\begin{definition}{ENE - Expected Negative Exposure}
+\textbf{ENE} = Exposition Négative Moyenne
+
+C'est la \textbf{moyenne} de notre exposition quand elle est négative (= quand c'est nous qui devons).
+
+$$\text{ENE}(t) = \mathbb{E}[\max(-V_t, 0)]$$
+
+\textbf{En français :} "En moyenne, combien devons-nous à la contrepartie à la date $t$ ?"
+\end{definition}
+
+\begin{definition}{PFE - Potential Future Exposure}
+\textbf{PFE} = Exposition Future Potentielle
+
+C'est l'exposition dans le \textbf{pire des cas} (souvent 95\% ou 99\%).
+
+$$\text{PFE}_{95\%}(t) = \text{Quantile}_{95\%}[\max(V_t, 0)]$$
+
+\textbf{En français :} "Dans 95\% des scénarios, notre exposition sera inférieure à cette valeur."
+\end{definition}
+
+\begin{exemple}{Comprendre EPE, ENE, PFE}
+On simule 1000 scénarios pour un swap. À la date t = 2 ans, voici les valeurs du swap :
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Scénario & Valeur du swap \\
+\midrule
+1 & +500,000 \\
+2 & -200,000 \\
+3 & +800,000 \\
+... & ... \\
+1000 & +300,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Supposons que parmi les 1000 scénarios :}
+\begin{itemize}
+    \item 600 ont une valeur positive (moyenne des positifs = +400,000)
+    \item 400 ont une valeur négative (moyenne des négatifs = -250,000)
+\end{itemize}
+
+\textbf{Calculs :}
+\begin{itemize}
+    \item $\text{EPE} = \frac{600 \times 400\,000 + 400 \times 0}{1000} = 240\,000$ EUR
+    \item $\text{ENE} = \frac{600 \times 0 + 400 \times 250\,000}{1000} = 100\,000$ EUR
+    \item $\text{PFE}_{95\%}$ = la 950ème plus grande valeur positive
+\end{itemize}
+\end{exemple}
+
+\newpage
+% ============================================================================
+% CHAPITRE 4 : MONTE CARLO
+% ============================================================================
+\section{La Simulation Monte Carlo}
+
+\subsection{Pourquoi Simuler ?}
+
+\begin{attention}{Le Problème}
+On ne connaît pas le futur ! Les taux d'intérêt et le taux de change peuvent aller dans n'importe quelle direction.
+
+\textbf{Solution :} On simule des \textbf{milliers de futurs possibles} et on fait des statistiques.
+\end{attention}
+
+\subsection{Comment ça Marche ?}
+
+\begin{definition}{Simulation Monte Carlo}
+\textbf{Monte Carlo} = Générer des milliers de scénarios aléatoires pour estimer des valeurs qu'on ne peut pas calculer exactement.
+
+\textbf{Dans notre cas :}
+\begin{enumerate}
+    \item On génère 5000 trajectoires possibles des taux d'intérêt
+    \item On génère 5000 trajectoires possibles du taux de change
+    \item Pour chaque trajectoire, on calcule la valeur du portefeuille à chaque date
+    \item On fait la moyenne pour obtenir EPE, ENE, etc.
+\end{enumerate}
+\end{definition}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.7]
+    \draw[->] (0,0) -- (10,0) node[right] {Temps};
+    \draw[->] (0,-1) -- (0,4) node[above] {Taux};
+
+    % Plusieurs trajectoires
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,2.3) (4,2.1) (6,2.5) (8,2.8)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,1.8) (4,1.5) (6,1.7) (8,1.3)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,2.1) (4,2.4) (6,2.2) (8,2.6)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,1.9) (4,2.0) (6,1.8) (8,1.5)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,2.2) (4,2.6) (6,3.0) (8,3.2)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,1.7) (4,1.4) (6,1.2) (8,0.8)};
+    \draw[blue, opacity=0.3] plot[smooth] coordinates {(0,2) (2,2.0) (4,1.9) (6,2.1) (8,2.0)};
+
+    \draw[red, very thick] plot[smooth] coordinates {(0,2) (2,2.0) (4,2.0) (6,2.0) (8,2.0)};
+
+    \node at (5,-1.5) {5000 trajectoires simulées};
+    \node[red] at (9.5,2) {Moyenne};
+
+    \fill (0,2) circle (3pt);
+    \node[below] at (0,2) {Aujourd'hui};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Les Modèles Utilisés}
+
+\subsubsection{Pour les Taux d'Intérêt : Ornstein-Uhlenbeck}
+
+\begin{formule}{Modèle Ornstein-Uhlenbeck (Vasicek)}
+$$dr = \kappa(\theta - r) \, dt + \sigma \, dW$$
+
+\textbf{Paramètres :}
+\begin{itemize}
+    \item $r$ = taux d'intérêt actuel
+    \item $\kappa$ = vitesse de retour à la moyenne (ex: 0.1)
+    \item $\theta$ = taux moyen long terme (ex: 2\%)
+    \item $\sigma$ = volatilité (ex: 1\%)
+    \item $dW$ = choc aléatoire (mouvement brownien)
+\end{itemize}
+\end{formule}
+
+\begin{exemple}{Intuition du Modèle OU}
+\textbf{Si le taux actuel est 3\% et $\theta = 2\%$ :}
+
+Le terme $\kappa(\theta - r) = \kappa(2\% - 3\%) < 0$ va \textbf{tirer le taux vers le bas}.
+
+$\Rightarrow$ Le modèle OU fait que les taux \textbf{reviennent vers leur moyenne} à long terme.
+
+C'est réaliste : les taux ne montent pas à l'infini ni ne descendent à -100\%.
+\end{exemple}
+
+\subsubsection{Pour le Taux de Change : GBM}
+
+\begin{formule}{Modèle GBM (Geometric Brownian Motion)}
+$$\frac{dS}{S} = (r_d - r_f) \, dt + \sigma \, dW$$
+
+\textbf{Paramètres :}
+\begin{itemize}
+    \item $S$ = taux de change (ex: EUR/USD = 1.10)
+    \item $r_d$ = taux domestique (USD)
+    \item $r_f$ = taux étranger (EUR)
+    \item $\sigma$ = volatilité FX (ex: 12\%)
+\end{itemize}
+\end{formule}
+
+\newpage
+% ============================================================================
+% CHAPITRE 5 : COLLATÉRAL
+% ============================================================================
+\section{Le Collatéral : Réduire le Risque}
+
+\subsection{C'est quoi le Collatéral ?}
+
+\begin{definition}{Collatéral (Garantie)}
+Le \textbf{collatéral} est une garantie (souvent du cash) qu'on échange pour \textbf{réduire le risque de contrepartie}.
+
+\textbf{Idée :} Si tu me dois 1 million et que tu me donnes 1 million en garantie, même si tu fais faillite, j'ai déjà l'argent !
+\end{definition}
+
+\subsection{Variation Margin (VM)}
+
+\begin{definition}{Variation Margin}
+La \textbf{Variation Margin} est le collatéral échangé \textbf{régulièrement} pour couvrir la valeur de marché actuelle du contrat.
+
+\textbf{Règle simple :}
+\begin{itemize}
+    \item Si le contrat vaut +1M pour moi $\Rightarrow$ la contrepartie me donne 1M
+    \item Si le contrat vaut -1M pour moi $\Rightarrow$ je donne 1M à la contrepartie
+\end{itemize}
+\end{definition}
+
+\begin{exemple}{Variation Margin en Action}
+\textbf{Jour 1 :} Swap vaut 0 $\Rightarrow$ pas d'échange
+
+\textbf{Jour 30 :} Swap vaut +500k pour nous $\Rightarrow$ on reçoit 500k de collatéral
+
+\textbf{Jour 60 :} Swap vaut +300k pour nous $\Rightarrow$ on rend 200k (on garde 300k)
+
+\textbf{Jour 90 :} Swap vaut -100k pour nous $\Rightarrow$ on rend tout et on paie 100k
+\end{exemple}
+
+\subsection{Paramètres du Collatéral}
+
+\begin{definition}{Threshold (Seuil)}
+Le \textbf{seuil} est le montant d'exposition en dessous duquel on n'échange pas de collatéral.
+
+\textbf{Exemple :} Seuil = 1M EUR
+
+Si exposition = 800k $\Rightarrow$ pas de collatéral (en dessous du seuil)\\
+Si exposition = 1.5M $\Rightarrow$ on reçoit 500k de collatéral (1.5M - 1M)
+\end{definition}
+
+\begin{definition}{MTA - Minimum Transfer Amount}
+Le \textbf{MTA} est le montant minimum pour faire un transfert de collatéral.
+
+\textbf{Exemple :} MTA = 100k EUR
+
+Si la variation depuis le dernier appel est de 50k $\Rightarrow$ pas de transfert\\
+Si la variation est de 150k $\Rightarrow$ transfert de 150k
+\end{definition}
+
+\begin{definition}{MPR - Margin Period of Risk}
+Le \textbf{MPR} est le temps qu'il faut pour clôturer une position si la contrepartie fait défaut.
+
+\textbf{Typiquement :} 10 jours ouvrés
+
+\textbf{Pourquoi c'est important ?}\\
+Pendant ces 10 jours, le marché peut bouger et on peut perdre de l'argent même si on avait du collatéral avant.
+\end{definition}
+
+\begin{exemple}{Impact du MPR}
+\textbf{Jour 0 :} Swap vaut +1M, on a 1M de collatéral $\Rightarrow$ exposition nette = 0
+
+\textbf{La contrepartie fait défaut !}
+
+\textbf{Pendant les 10 jours de clôture :}
+\begin{itemize}
+    \item Le swap peut passer de +1M à +1.5M
+    \item On a toujours seulement 1M de collatéral
+    \item Exposition réelle = 1.5M - 1M = \textbf{500k de risque}
+\end{itemize}
+
+$\Rightarrow$ Le MPR crée un "risque résiduel" même avec du collatéral.
+\end{exemple}
+
+\subsection{Initial Margin (IM)}
+
+\begin{definition}{Initial Margin}
+L'\textbf{Initial Margin} est du collatéral supplémentaire pour couvrir le risque pendant le MPR.
+
+\textbf{Calcul simplifié :}
+$$\text{IM} \approx 1.5 \times \text{EPE}$$
+
+C'est de l'argent "bloqué" qui coûte (d'où le MVA qu'on verra plus tard).
+\end{definition}
+
+\newpage
+% ============================================================================
+% CHAPITRE 6 : LES xVA
+% ============================================================================
+\section{Les xVA : Les Ajustements de Valorisation}
+
+\subsection{Vue d'Ensemble}
+
+\begin{resume}{Les 5 xVA}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{xVA} & \textbf{Nom} & \textbf{C'est quoi ?} & \textbf{Coût/Bénéfice} \\
+\midrule
+CVA & Credit VA & Risque de défaut de la contrepartie & Coût (+) \\
+DVA & Debt VA & Risque de notre propre défaut & Bénéfice (-) \\
+FVA & Funding VA & Coût de financement & Coût (+) \\
+MVA & Margin VA & Coût de la marge initiale & Coût (+) \\
+KVA & Capital VA & Coût du capital réglementaire & Coût (+) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+$$\boxed{\text{Total xVA} = \text{CVA} - \text{DVA} + \text{FVA} + \text{MVA} + \text{KVA}}$$
+\end{resume}
+
+\subsection{CVA - Credit Valuation Adjustment}
+
+\begin{definition}{CVA}
+Le \textbf{CVA} est le coût du risque que la \textbf{contrepartie fasse défaut}.
+
+\textbf{Intuition :} C'est comme une "prime d'assurance" contre le défaut de la contrepartie.
+\end{definition}
+
+\begin{formule}{CVA}
+$$\text{CVA} = \sum_{i=1}^{n} DF(t_i) \times EPE(t_i) \times LGD \times \Delta PD(t_i)$$
+
+\textbf{Où :}
+\begin{itemize}
+    \item $DF(t_i)$ = facteur d'actualisation (valeur aujourd'hui de 1€ futur)
+    \item $EPE(t_i)$ = exposition positive espérée à $t_i$
+    \item $LGD$ = perte en cas de défaut (ex: 60\%)
+    \item $\Delta PD(t_i)$ = probabilité de défaut entre $t_{i-1}$ et $t_i$
+\end{itemize}
+\end{formule}
+
+\begin{exemple}{Calcul de CVA Simplifié}
+\textbf{Données :}
+\begin{itemize}
+    \item Horizon : 2 ans (2 périodes)
+    \item EPE année 1 = 1M EUR, EPE année 2 = 800k EUR
+    \item DF = 0.98 (année 1), 0.96 (année 2)
+    \item LGD = 60\%
+    \item $\lambda$ = 2\% par an $\Rightarrow$ $\Delta PD_1 \approx 2\%$, $\Delta PD_2 \approx 1.96\%$
+\end{itemize}
+
+\textbf{Calcul :}
+\begin{align*}
+\text{CVA} &= 0.98 \times 1\,000\,000 \times 0.6 \times 0.02 \\
+           &+ 0.96 \times 800\,000 \times 0.6 \times 0.0196 \\
+           &= 11\,760 + 9\,031 \\
+           &= \textbf{20\,791 EUR}
+\end{align*}
+
+\textbf{Interprétation :} On devrait charger ~21k EUR au client pour couvrir le risque de défaut.
+\end{exemple}
+
+\subsection{DVA - Debt Valuation Adjustment}
+
+\begin{definition}{DVA}
+Le \textbf{DVA} est le "bénéfice" lié au fait que \textbf{nous pouvons aussi faire défaut}.
+
+\textbf{Logique (controversée) :} Si nous faisons défaut, nous ne paierons pas ce que nous devons. C'est un "gain" pour nous.
+
+Le DVA est calculé sur l'\textbf{ENE} (quand nous devons de l'argent).
+\end{definition}
+
+\begin{formule}{DVA}
+$$\text{DVA} = \sum_{i=1}^{n} DF(t_i) \times ENE(t_i) \times LGD_{\text{own}} \times \Delta PD_{\text{own}}(t_i)$$
+\end{formule}
+
+\begin{attention}{Controverse du DVA}
+Le DVA est controversé car il dit : "Plus je suis risqué, plus j'ai de bénéfices !"
+
+C'est contre-intuitif, mais c'est la logique comptable IFRS 13 / FAS 157.
+
+Dans le Total xVA, on le \textbf{soustrait} : Total = CVA \textbf{- DVA} + ...
+\end{attention}
+
+\subsection{FVA - Funding Valuation Adjustment}
+
+\begin{definition}{FVA}
+Le \textbf{FVA} est le coût de \textbf{financement} de l'exposition positive.
+
+\textbf{Intuition :} Si le swap vaut +1M pour nous, la contrepartie nous "doit" 1M. Mais tant qu'on ne l'a pas reçu, on doit peut-être emprunter cet argent sur le marché.
+\end{definition}
+
+\begin{formule}{FVA}
+$$\text{FVA} = \sum_{i=1}^{n} DF(t_i) \times EPE(t_i) \times s_f \times \Delta t$$
+
+\textbf{Où :}
+\begin{itemize}
+    \item $s_f$ = spread de funding (ex: 1\% = 100 bps au-dessus du taux sans risque)
+    \item $\Delta t$ = durée de la période
+\end{itemize}
+\end{formule}
+
+\begin{exemple}{Calcul de FVA}
+\textbf{Données :}
+\begin{itemize}
+    \item EPE moyen sur 5 ans = 2M EUR
+    \item Spread de funding = 1\% par an
+\end{itemize}
+
+\textbf{Approximation simple :}
+$$\text{FVA} \approx 2\,000\,000 \times 1\% \times 5 \times 0.9 \approx \textbf{90\,000 EUR}$$
+
+(Le 0.9 est une approximation du facteur d'actualisation moyen)
+\end{exemple}
+
+\subsection{MVA - Margin Valuation Adjustment}
+
+\begin{definition}{MVA}
+Le \textbf{MVA} est le coût de \textbf{financement de l'Initial Margin}.
+
+\textbf{Intuition :} L'IM est de l'argent bloqué qu'on ne peut pas utiliser. On doit l'emprunter, donc ça coûte.
+\end{definition}
+
+\begin{formule}{MVA}
+$$\text{MVA} = \sum_{i=1}^{n} DF(t_i) \times IM(t_i) \times s_f \times \Delta t$$
+
+\textbf{Similaire au FVA, mais sur l'IM au lieu de l'EPE.}
+\end{formule}
+
+\subsection{KVA - Capital Valuation Adjustment}
+
+\begin{definition}{KVA}
+Le \textbf{KVA} est le coût du \textbf{capital réglementaire} que la banque doit détenir.
+
+\textbf{Intuition :} Les régulateurs obligent les banques à garder du capital pour absorber les pertes potentielles. Ce capital a un coût d'opportunité.
+\end{definition}
+
+\begin{formule}{KVA}
+$$\text{KVA} = \sum_{i=1}^{n} DF(t_i) \times K(t_i) \times CoC \times \Delta t$$
+
+\textbf{Où :}
+\begin{itemize}
+    \item $K(t_i)$ = capital requis = $\beta \times EAD(t_i)$
+    \item $\beta$ = ratio de capital (ex: 8\%)
+    \item $CoC$ = coût du capital (ex: 10\%)
+    \item $EAD$ = Exposure at Default (calculé via SA-CCR)
+\end{itemize}
+\end{formule}
+
+\newpage
+% ============================================================================
+% CHAPITRE 7 : SA-CCR
+% ============================================================================
+\section{SA-CCR : Le Capital Réglementaire}
+
+\subsection{C'est quoi SA-CCR ?}
+
+\begin{definition}{SA-CCR}
+\textbf{SA-CCR} = Standardized Approach for Counterparty Credit Risk
+
+C'est la méthode \textbf{réglementaire} (Bâle III) pour calculer l'\textbf{Exposure at Default (EAD)} des produits dérivés.
+
+L'EAD sert ensuite à calculer le capital réglementaire que la banque doit détenir.
+\end{definition}
+
+\subsection{La Formule SA-CCR}
+
+\begin{formule}{SA-CCR}
+$$\boxed{\text{EAD} = \alpha \times (\text{RC} + \text{PFE})}$$
+
+\textbf{Où :}
+\begin{itemize}
+    \item $\alpha = 1.4$ (multiplicateur réglementaire, fixé par Bâle)
+    \item $\text{RC}$ = Replacement Cost (coût de remplacement)
+    \item $\text{PFE}$ = Potential Future Exposure
+\end{itemize}
+\end{formule}
+
+\subsubsection{Replacement Cost (RC)}
+
+\begin{definition}{Replacement Cost}
+$$\text{RC} = \max(V - C, 0)$$
+
+\textbf{Où :}
+\begin{itemize}
+    \item $V$ = valeur de marché actuelle du portefeuille
+    \item $C$ = collatéral détenu
+\end{itemize}
+
+\textbf{Intuition :} C'est ce qu'on perdrait si la contrepartie faisait défaut \textbf{aujourd'hui}.
+\end{definition}
+
+\subsubsection{Potential Future Exposure (PFE)}
+
+\begin{definition}{PFE dans SA-CCR}
+$$\text{PFE} = \text{multiplier} \times \text{AddOn}$$
+
+\textbf{AddOn} dépend du type de produit :
+\begin{itemize}
+    \item \textbf{Taux d'intérêt :} AddOn = Notionnel $\times$ SF $\times$ MF
+    \item \textbf{FX :} AddOn = Notionnel $\times$ SF
+\end{itemize}
+
+\textbf{SF} = Supervisory Factor (facteur réglementaire) :
+\begin{itemize}
+    \item Taux d'intérêt : 0.5\%
+    \item FX : 4\%
+\end{itemize}
+
+\textbf{MF} = Maturity Factor = $\sqrt{\min(M, 5)}$ pour les taux
+\end{definition}
+
+\begin{exemple}{Calcul SA-CCR}
+\textbf{Portefeuille :}
+\begin{itemize}
+    \item 1 IRS : Notionnel = 10M, Maturité = 5 ans
+    \item 1 FX Forward : Notionnel = 5M EUR (= 5.5M USD)
+    \item Valeur de marché actuelle : V = +800k USD
+    \item Pas de collatéral
+\end{itemize}
+
+\textbf{Étape 1 : RC}
+$$\text{RC} = \max(800\,000 - 0, 0) = 800\,000$$
+
+\textbf{Étape 2 : AddOn IRS}
+$$\text{AddOn}_{\text{IRS}} = 10\,000\,000 \times 0.5\% \times \sqrt{5} = 111\,803$$
+
+\textbf{Étape 3 : AddOn FX}
+$$\text{AddOn}_{\text{FX}} = 5\,500\,000 \times 4\% = 220\,000$$
+
+\textbf{Étape 4 : PFE} (multiplier = 1 car pas de collatéral excédentaire)
+$$\text{PFE} = 1 \times (111\,803 + 220\,000) = 331\,803$$
+
+\textbf{Étape 5 : EAD}
+$$\text{EAD} = 1.4 \times (800\,000 + 331\,803) = \textbf{1\,584\,524 USD}$$
+\end{exemple}
+
+\newpage
+% ============================================================================
+% CHAPITRE 8 : RÉCAPITULATIF
+% ============================================================================
+\section{Récapitulatif : Tout Relier}
+
+\subsection{Le Flux de Calcul de l'Application}
+
+\begin{center}
+\begin{tikzpicture}[
+    block/.style={draw, rounded corners, fill=lightblue, minimum width=4cm, minimum height=1cm, align=center},
+    arrow/.style={->, very thick}
+]
+
+\node[block] (port) at (0,0) {1. Portefeuille\\(IRS, FX Forwards)};
+\node[block] (mc) at (0,-2.5) {2. Monte Carlo\\(5000 simulations)};
+\node[block] (exp) at (0,-5) {3. Expositions\\(EPE, ENE, PFE)};
+\node[block] (coll) at (5,-5) {4. Collatéral\\(VM + IM)};
+\node[block] (xva) at (5,-2.5) {5. xVA\\(CVA, DVA, FVA, MVA, KVA)};
+\node[block] (saccr) at (5,0) {6. SA-CCR\\(EAD)};
+
+\draw[arrow] (port) -- (mc);
+\draw[arrow] (mc) -- (exp);
+\draw[arrow] (exp) -- (coll);
+\draw[arrow] (coll) -- (xva);
+\draw[arrow] (xva) -- (saccr);
+\draw[arrow, dashed] (exp) -- (xva);
+
+\end{tikzpicture}
+\end{center}
+
+\subsection{Tableau Récapitulatif des Termes}
+
+\begin{center}
+\small
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Terme} & \textbf{Signification} & \textbf{Explication simple} \\
+\midrule
+IRS & Interest Rate Swap & Échange de taux fixe contre taux variable \\
+FX Forward & Foreign Exchange Forward & Achat/vente de devise à terme \\
+EPE & Expected Positive Exposure & Moyenne de ce qu'on peut perdre \\
+ENE & Expected Negative Exposure & Moyenne de ce qu'on doit \\
+PFE & Potential Future Exposure & Pire cas (95\% ou 99\%) \\
+LGD & Loss Given Default & Perte en cas de défaut (ex: 60\%) \\
+Hazard Rate & Taux de défaut & Probabilité instantanée de défaut \\
+VM & Variation Margin & Collatéral quotidien \\
+IM & Initial Margin & Collatéral de sécurité supplémentaire \\
+MPR & Margin Period of Risk & Temps pour clôturer (10 jours) \\
+MTA & Minimum Transfer Amount & Montant minimum d'appel de marge \\
+CVA & Credit VA & Coût du risque de défaut contrepartie \\
+DVA & Debt VA & "Bénéfice" de notre propre risque \\
+FVA & Funding VA & Coût de financement \\
+MVA & Margin VA & Coût de l'Initial Margin \\
+KVA & Capital VA & Coût du capital réglementaire \\
+SA-CCR & Standardized Approach CCR & Méthode réglementaire pour EAD \\
+EAD & Exposure at Default & Exposition pour le capital \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Les Formules Clés}
+
+\begin{resume}{Formules à Retenir}
+
+\textbf{Exposition :}
+$$\text{EPE}(t) = \mathbb{E}[\max(V_t, 0)] \qquad \text{ENE}(t) = \mathbb{E}[\max(-V_t, 0)]$$
+
+\textbf{Probabilité de survie :}
+$$S(t) = e^{-\lambda t}$$
+
+\textbf{xVA :}
+$$\text{CVA} = \sum_i DF_i \times EPE_i \times LGD \times \Delta PD_i$$
+$$\text{FVA} = \sum_i DF_i \times EPE_i \times s_f \times \Delta t$$
+$$\text{Total xVA} = \text{CVA} - \text{DVA} + \text{FVA} + \text{MVA} + \text{KVA}$$
+
+\textbf{SA-CCR :}
+$$\text{EAD} = 1.4 \times (\text{RC} + \text{PFE})$$
+\end{resume}
+
+\newpage
+% ============================================================================
+% ANNEXE : GLOSSAIRE RAPIDE POUR LA PRÉSENTATION
+% ============================================================================
+\section{Annexe : Aide-Mémoire pour ta Présentation}
+
+\subsection{Si on te pose une question...}
+
+\begin{center}
+\begin{tabular}{p{5cm}p{9cm}}
+\toprule
+\textbf{Question} & \textbf{Réponse simple} \\
+\midrule
+"C'est quoi un xVA ?" & "Ce sont les coûts cachés des dérivés : risque de défaut, financement, marge, capital." \\
+\midrule
+"Pourquoi 5000 simulations ?" & "C'est un compromis entre précision et temps de calcul. Plus on en fait, plus c'est précis." \\
+\midrule
+"C'est quoi Monte Carlo ?" & "On simule des milliers de futurs possibles pour estimer des moyennes et des risques." \\
+\midrule
+"Pourquoi le DVA est négatif ?" & "C'est un bénéfice : si on fait défaut, on ne paie pas ce qu'on doit. C'est controversé mais c'est la norme comptable." \\
+\midrule
+"C'est quoi le collatéral ?" & "C'est une garantie en cash qu'on échange pour réduire le risque. Si tu me dois 1M et me donnes 1M de garantie, je n'ai plus de risque." \\
+\midrule
+"C'est quoi SA-CCR ?" & "C'est la méthode réglementaire Bâle III pour calculer combien de capital la banque doit garder." \\
+\midrule
+"C'est quoi $\alpha = 1.4$ ?" & "C'est un multiplicateur de sécurité fixé par les régulateurs pour être conservateur." \\
+\midrule
+"Pourquoi l'EPE diminue avec le collatéral ?" & "Parce que le collatéral couvre une partie de l'exposition. On ne risque que la partie non couverte." \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Chiffres Typiques à Retenir}
+
+\begin{itemize}
+    \item \textbf{LGD} : 60\% (on récupère 40\% en cas de défaut)
+    \item \textbf{Hazard rate} : 1-2\% par an pour une contrepartie investment grade
+    \item \textbf{Funding spread} : 100 bps (1\%)
+    \item \textbf{Coût du capital} : 10\%
+    \item \textbf{MPR} : 10 jours ouvrés
+    \item \textbf{Seuil collatéral} : souvent 0 à 10M selon l'accord
+    \item \textbf{$\alpha$ SA-CCR} : 1.4 (fixé par Bâle)
+    \item \textbf{SF taux} : 0.5\%
+    \item \textbf{SF FX} : 4\%
+\end{itemize}
+
+\end{document}

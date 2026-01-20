@@ -1,0 +1,541 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% Couleurs
+\definecolor{darkblue}{RGB}{0, 51, 102}
+\definecolor{lightblue}{RGB}{230, 242, 255}
+\definecolor{darkgreen}{RGB}{0, 100, 0}
+\definecolor{lightgreen}{RGB}{230, 255, 230}
+\definecolor{darkorange}{RGB}{200, 100, 0}
+\definecolor{lightorange}{RGB}{255, 245, 230}
+
+% Boîtes
+\newtcolorbox{slide}[1]{
+    colback=lightblue,
+    colframe=darkblue,
+    title={\textbf{#1}},
+    fonttitle=\large
+}
+
+\newtcolorbox{texte}{
+    colback=white,
+    colframe=darkblue,
+    left=5pt,
+    right=5pt
+}
+
+\newtcolorbox{action}[1]{
+    colback=lightorange,
+    colframe=darkorange,
+    title={\textbf{ACTION : #1}}
+}
+
+\newtcolorbox{conseil}{
+    colback=lightgreen,
+    colframe=darkgreen,
+    title={\textbf{CONSEIL}}
+}
+
+% En-tête
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{darkblue}{\textbf{Script Partie 1 - Chef d'Orchestre / Démo}}}
+\fancyhead[R]{\textcolor{darkblue}{\thepage}}
+\renewcommand{\headrulewidth}{0.5pt}
+
+\begin{document}
+
+% ============================================================================
+% TITRE
+% ============================================================================
+\begin{center}
+{\Huge\textbf{\textcolor{darkblue}{Script de Présentation}}}\\[0.5cm]
+{\Large Partie 1 : Application \& Démonstration}\\[1cm]
+{\large Durée totale : \textbf{6-7 minutes}}\\[0.5cm]
+\end{center}
+
+\begin{conseil}
+\textbf{Avant de commencer :}
+\begin{itemize}
+    \item Ouvre l'application Streamlit AVANT la présentation
+    \item Terminal : \texttt{cd "/Users/.../xva-project" \&\& streamlit run xva\_app/app.py}
+    \item Laisse l'app ouverte en arrière-plan
+    \item Garde ce script à côté de toi (sur ton téléphone ou imprimé)
+\end{itemize}
+\end{conseil}
+
+\newpage
+
+% ============================================================================
+% SLIDE 1 : TITRE
+% ============================================================================
+\begin{slide}{SLIDE 1 -- Page de Titre}
+\textit{Durée : 10 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Bonjour à tous. Nous allons vous présenter notre projet : le \textbf{xVA Calculation Engine}, une application de calcul des ajustements de valorisation et du capital réglementaire pour les produits dérivés. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\vspace{1cm}
+
+% ============================================================================
+% SLIDE 2 : PLAN
+% ============================================================================
+\begin{slide}{SLIDE 2 -- Plan de la Présentation}
+\textit{Durée : 30 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Voici le plan de notre présentation, divisée en 5 parties :
+
+\begin{itemize}
+    \item \textbf{Partie 1}, que je vais présenter : l'application et une démonstration live
+    \item \textbf{Partie 2} : les modèles de marché utilisés pour simuler les taux et le change
+    \item \textbf{Partie 3} : les instruments financiers et leur valorisation
+    \item \textbf{Partie 4} : le calcul de l'exposition et la gestion du collatéral
+    \item \textbf{Partie 5} : le calcul des xVA et le capital réglementaire SA-CCR
+\end{itemize}
+
+La présentation durera environ 25 à 30 minutes. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% SLIDE 3 : TITRE PARTIE 1
+% ============================================================================
+\begin{slide}{SLIDE 3 -- Titre Partie 1 : Application \& Démo}
+\textit{Durée : 5 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Commençons par la \textbf{Partie 1} : présentation de l'application et démonstration. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\vspace{1cm}
+
+% ============================================================================
+% SLIDE 4 : RAPPEL xVA
+% ============================================================================
+\begin{slide}{SLIDE 4 -- Rappel : C'est quoi les xVA ?}
+\textit{Durée : 1 minute}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Avant de présenter l'application, un petit rappel sur ce que sont les \textbf{xVA}.
+
+Quand une banque fait un trade sur un produit dérivé, le prix théorique ne suffit pas. Il faut ajouter des \textbf{ajustements} pour prendre en compte les vrais risques.
+
+Ces ajustements sont principalement des \textbf{coûts} :
+
+\begin{itemize}
+    \item Le \textbf{CVA}, Credit Valuation Adjustment : c'est le coût du risque que la contrepartie fasse défaut
+    \item Le \textbf{FVA}, Funding Valuation Adjustment : c'est le coût de financement de l'exposition
+    \item Le \textbf{MVA}, Margin Valuation Adjustment : c'est le coût des marges, du collatéral
+    \item Le \textbf{KVA}, Capital Valuation Adjustment : c'est le coût du capital réglementaire que la banque doit détenir
+\end{itemize}
+
+Il y a aussi un \textbf{bénéfice} :
+\begin{itemize}
+    \item Le \textbf{DVA}, Debt Valuation Adjustment : c'est le gain théorique si c'est nous qui faisons défaut
+\end{itemize}
+
+La formule clé est donc : \textbf{Total xVA = CVA moins DVA plus FVA plus MVA plus KVA}.
+
+Mes collègues expliqueront chacun de ces termes en détail dans la partie 5. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% SLIDE 5 : OBJECTIF
+% ============================================================================
+\begin{slide}{SLIDE 5 -- Objectif de l'Application}
+\textit{Durée : 45 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Maintenant, pourquoi avons-nous développé cette application ?
+
+Le problème, c'est que calculer les xVA à la main est \textbf{impossible}. Il faut :
+\begin{itemize}
+    \item Simuler des \textbf{milliers de scénarios} futurs de marché
+    \item Calculer l'exposition du portefeuille à \textbf{chaque date} future
+    \item Appliquer le \textbf{collatéral} pour réduire l'exposition
+    \item Et intégrer les \textbf{probabilités de défaut} de la contrepartie
+\end{itemize}
+
+Notre solution, c'est cette application.
+
+Le workflow est simple, comme vous le voyez sur le schéma :
+\begin{enumerate}
+    \item On définit un \textbf{portefeuille} de produits dérivés (des swaps de taux, des forwards de change)
+    \item L'application fait une simulation \textbf{Monte Carlo} avec 5000 scénarios
+    \item Et elle produit en sortie tous les \textbf{xVA} ainsi que le capital réglementaire \textbf{SA-CCR}
+\end{enumerate}
+\fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% SLIDE 6 : TECHNOLOGIES
+% ============================================================================
+\begin{slide}{SLIDE 6 -- Technologies \& Architecture}
+\textit{Durée : 45 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Quelques mots sur les technologies utilisées.
+
+L'application est développée en \textbf{Python}, avec les librairies classiques de calcul scientifique : \textbf{NumPy} et \textbf{Pandas}.
+
+Pour l'interface web interactive, nous utilisons \textbf{Streamlit}, qui permet de créer rapidement des dashboards.
+
+Les graphiques sont générés avec \textbf{Plotly} pour avoir des visualisations dynamiques.
+
+En termes de modèles financiers, nous utilisons :
+\begin{itemize}
+    \item Le modèle \textbf{Ornstein-Uhlenbeck} pour simuler les taux d'intérêt
+    \item Le modèle \textbf{GBM}, Geometric Brownian Motion, pour le taux de change
+\end{itemize}
+
+À droite, vous voyez l'architecture du code. Le projet est organisé en modules :
+\begin{itemize}
+    \item \texttt{market} pour les modèles de marché
+    \item \texttt{instruments} pour les produits financiers
+    \item \texttt{exposure} pour le calcul d'exposition
+    \item \texttt{collateral} pour la gestion du collatéral
+    \item \texttt{xva} pour le calcul des ajustements
+    \item Et \texttt{reg} pour le capital réglementaire SA-CCR
+\end{itemize}
+
+Mes collègues présenteront chacun de ces modules en détail. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% SLIDE 7 : LES 9 ONGLETS
+% ============================================================================
+\begin{slide}{SLIDE 7 -- Interface : Les 9 Onglets}
+\textit{Durée : 45 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Voici la structure de l'interface de notre application. Elle comporte \textbf{9 onglets}.
+
+\begin{itemize}
+    \item \textbf{Portfolio} : c'est là qu'on définit les trades du portefeuille
+    \item \textbf{Exposure} : affiche les profils d'exposition EPE, ENE et PFE
+    \item \textbf{xVA} : donne le détail de chaque ajustement de valorisation
+    \item \textbf{SA-CCR} : calcule le capital réglementaire selon la méthode Bâle III
+    \item \textbf{Calibration} : permet de calibrer les paramètres des modèles
+    \item \textbf{Stress Test} : pour tester des scénarios extrêmes
+    \item \textbf{Sensitivités} : calcule les sensibilités des xVA aux paramètres
+    \item \textbf{Méthodologie} : documente toutes les formules utilisées
+    \item Et \textbf{Export} : pour télécharger les résultats en Excel, CSV ou JSON
+\end{itemize}
+
+Le workflow typique est : définir le portefeuille, lancer la simulation, analyser l'exposition, regarder les xVA, vérifier le SA-CCR, et exporter les résultats. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% SLIDE 8 : PORTEFEUILLE
+% ============================================================================
+\begin{slide}{SLIDE 8 -- Portefeuille de Démonstration}
+\textit{Durée : 30 secondes}
+\end{slide}
+
+\begin{texte}
+\textbf{Ce que tu dis :}
+
+\og Pour la démonstration, nous allons utiliser un portefeuille de test composé de \textbf{5 trades}.
+
+\textbf{3 swaps de taux d'intérêt} :
+\begin{itemize}
+    \item Le premier : 10 millions de dollars, taux fixe 2.5\%, maturité 5 ans, on paie le fixe
+    \item Le deuxième : 15 millions, taux 2\%, 3 ans, on reçoit le fixe
+    \item Le troisième : 8 millions, taux 3\%, 7 ans, on paie le fixe
+\end{itemize}
+
+Et \textbf{2 forwards de change} EUR/USD :
+\begin{itemize}
+    \item Le premier : 5 millions d'euros, strike 1.12, maturité 1 an, on achète l'euro
+    \item Le deuxième : 3 millions d'euros, strike 1.08, 2 ans, on vend l'euro
+\end{itemize}
+
+Au total, le notionnel est d'environ \textbf{44 millions de dollars}.
+
+Passons maintenant à la démonstration live de l'application. \fg{}
+\end{texte}
+
+\begin{action}{Passe à la slide suivante (slide de démo), puis bascule vers l'application Streamlit}
+\end{action}
+
+\newpage
+
+% ============================================================================
+% DÉMO LIVE
+% ============================================================================
+\begin{slide}{SLIDE 9 -- Démonstration Live (+ Application)}
+\textit{Durée : 3-4 minutes}
+\end{slide}
+
+\begin{action}{Bascule vers l'application Streamlit (Alt+Tab ou clique sur la fenêtre)}
+\end{action}
+
+\vspace{0.5cm}
+
+\begin{texte}
+\textbf{Ce que tu dis en montrant l'application :}
+
+\og Je vais maintenant vous faire une démonstration de l'application.
+
+\vspace{0.3cm}
+
+\textbf{[MONTRE LE SIDEBAR À GAUCHE]}
+
+À gauche, vous voyez le panneau de configuration. On peut modifier tous les paramètres :
+
+\begin{itemize}
+    \item Dans \textbf{Monte Carlo} : le nombre de simulations, ici 5000 paths, l'horizon de 5 ans, et le pas de temps trimestriel
+
+    \item Dans \textbf{Market Models} : les paramètres des modèles de taux. Kappa c'est la vitesse de retour à la moyenne, theta c'est le taux long terme à 2\%, et sigma c'est la volatilité à 100 points de base
+
+    \item Dans \textbf{Correlations} : les corrélations entre les différents facteurs de risque
+
+    \item Dans \textbf{Collateral} : le seuil d'appel de marge à 1 million, le montant minimum de transfert à 100 mille, et la période de risque de 10 jours
+
+    \item Et dans \textbf{Credit \& Funding} : le LGD à 60\%, les taux de défaut, le spread de funding et le coût du capital
+\end{itemize}
+
+\fg{}
+\end{texte}
+
+\newpage
+
+\begin{texte}
+\textbf{[MONTRE L'ONGLET PORTFOLIO]}
+
+\og Dans l'onglet \textbf{Portfolio}, on voit les trades que j'ai décrits tout à l'heure. On a nos 3 swaps de taux et nos 2 forwards de change. On peut ajouter ou supprimer des trades directement dans cette interface.
+
+\vspace{0.5cm}
+
+\textbf{[CLIQUE SUR LE BOUTON RUN]}
+
+Je vais maintenant lancer la simulation en cliquant sur le bouton \textbf{Run}.
+
+\textit{[Attends quelques secondes que le calcul se fasse]}
+
+La simulation est terminée. Elle a généré 5000 scénarios sur 5 ans. \fg{}
+\end{texte}
+
+\vspace{0.5cm}
+
+\begin{texte}
+\textbf{[CLIQUE SUR L'ONGLET EXPOSURE]}
+
+\og Allons voir les résultats dans l'onglet \textbf{Exposure}.
+
+Ici vous voyez les \textbf{profils d'exposition} :
+
+\begin{itemize}
+    \item La courbe \textbf{EPE}, Expected Positive Exposure, en bleu. C'est notre exposition moyenne quand elle est positive. Elle monte puis redescend vers la fin car les trades arrivent à maturité.
+
+    \item La courbe \textbf{PFE} au-dessus représente le pire cas à 95\%. C'est notre exposition maximale dans 95\% des scénarios.
+
+    \item Et vous pouvez voir l'effet du \textbf{collatéral} : la courbe verte montre l'exposition AVEC collatéral. Elle est nettement plus basse, environ 50\% de réduction.
+\end{itemize}
+
+C'est exactement ce qu'on veut : le collatéral réduit notre risque de moitié. \fg{}
+\end{texte}
+
+\newpage
+
+\begin{texte}
+\textbf{[CLIQUE SUR L'ONGLET xVA]}
+
+\og Maintenant, l'onglet le plus important : \textbf{xVA}.
+
+Ici vous avez le \textbf{breakdown complet} de tous les ajustements de valorisation :
+
+\begin{itemize}
+    \item Le \textbf{CVA}, le coût du risque de défaut de la contrepartie. C'est généralement la composante la plus importante.
+
+    \item Le \textbf{DVA}, qui est un bénéfice, donc il est négatif dans le total.
+
+    \item Le \textbf{FVA}, le coût de financement.
+
+    \item Le \textbf{MVA}, le coût de la marge initiale.
+
+    \item Et le \textbf{KVA}, le coût du capital réglementaire.
+\end{itemize}
+
+Le \textbf{Total xVA} est affiché en bas. C'est le montant total qu'il faudrait charger au client pour couvrir tous ces risques.
+
+Vous voyez aussi le résultat exprimé en \textbf{points de base} par rapport au notionnel, ce qui permet de comparer facilement avec d'autres trades. \fg{}
+\end{texte}
+
+\vspace{0.5cm}
+
+\begin{texte}
+\textbf{[CLIQUE SUR L'ONGLET SA-CCR]}
+
+\og Enfin, l'onglet \textbf{SA-CCR} montre le calcul du capital réglementaire selon la méthode standardisée de Bâle III.
+
+Vous voyez :
+\begin{itemize}
+    \item Le \textbf{Replacement Cost}, qui est la valeur de marché actuelle
+    \item Le \textbf{PFE}, Potential Future Exposure, calculé avec les supervisory factors
+    \item Et l'\textbf{EAD}, Exposure at Default, qui est égal à 1.4 fois la somme des deux
+\end{itemize}
+
+Le 1.4 est le multiplicateur réglementaire fixé par le Comité de Bâle.
+
+C'est cet EAD qui est ensuite utilisé pour calculer le capital que la banque doit détenir. \fg{}
+\end{texte}
+
+\newpage
+
+\begin{texte}
+\textbf{[OPTIONNEL - SI TU AS LE TEMPS : ONGLET EXPORT]}
+
+\og Pour finir, dans l'onglet \textbf{Export}, on peut télécharger tous les résultats :
+\begin{itemize}
+    \item En \textbf{Excel} pour une analyse détaillée
+    \item En \textbf{CSV} pour les importer dans d'autres outils
+    \item Ou en \textbf{JSON} pour l'intégration avec d'autres systèmes
+\end{itemize}
+
+\fg{}
+\end{texte}
+
+\vspace{0.5cm}
+
+\begin{action}{Reviens aux slides (Alt+Tab)}
+\end{action}
+
+\vspace{0.5cm}
+
+\begin{texte}
+\textbf{[DE RETOUR SUR LES SLIDES]}
+
+\og Voilà pour la démonstration de l'application.
+
+Pour résumer, notre application permet de :
+\begin{enumerate}
+    \item Définir un portefeuille de produits dérivés
+    \item Simuler l'évolution des marchés avec Monte Carlo
+    \item Calculer les expositions avec et sans collatéral
+    \item Obtenir tous les xVA : CVA, DVA, FVA, MVA, KVA
+    \item Et calculer le capital réglementaire SA-CCR
+\end{enumerate}
+
+Je passe maintenant la parole à \textit{[prénom du collègue partie 2]} qui va vous expliquer les modèles de marché utilisés pour la simulation. \fg{}
+\end{texte}
+
+\newpage
+
+% ============================================================================
+% AIDE-MÉMOIRE
+% ============================================================================
+\section*{Aide-Mémoire : Termes Clés}
+
+Si on te pose des questions pendant ta partie :
+
+\vspace{0.5cm}
+
+\begin{tabular}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Terme} & \textbf{Explication simple} \\
+\hline
+\textbf{xVA} & Ajustements de valorisation = coûts cachés des dérivés \\
+\hline
+\textbf{CVA} & Coût du risque que la contrepartie fasse faillite \\
+\hline
+\textbf{DVA} & "Bénéfice" si c'est nous qui faisons faillite (controversé) \\
+\hline
+\textbf{FVA} & Coût d'emprunter l'argent qu'on doit financer \\
+\hline
+\textbf{MVA} & Coût de bloquer de l'argent en garantie (marge) \\
+\hline
+\textbf{KVA} & Coût du capital que la banque doit garder (réglementation) \\
+\hline
+\textbf{Monte Carlo} & On simule 5000 futurs possibles pour faire des moyennes \\
+\hline
+\textbf{EPE} & Exposition Positive Espérée = combien on peut perdre en moyenne \\
+\hline
+\textbf{PFE} & Pire cas (95\% des scénarios sont en dessous) \\
+\hline
+\textbf{Collatéral} & Garantie en cash qu'on échange pour réduire le risque \\
+\hline
+\textbf{SA-CCR} & Méthode Bâle III pour calculer le capital réglementaire \\
+\hline
+\textbf{EAD} & Exposure at Default = ce qu'on utilise pour le capital \\
+\hline
+\textbf{Pourquoi 1.4 ?} & Multiplicateur de sécurité fixé par les régulateurs de Bâle \\
+\hline
+\textbf{Pourquoi 5000 paths ?} & Compromis entre précision et temps de calcul \\
+\hline
+\end{tabular}
+
+\vspace{1cm}
+
+\begin{conseil}
+\textbf{Conseils pour la présentation :}
+\begin{itemize}
+    \item Parle lentement et clairement
+    \item Regarde le public, pas seulement l'écran
+    \item Si tu ne sais pas répondre à une question, dis : \og C'est une bonne question, mon collègue X qui présente la partie Y pourra mieux vous répondre. \fg{}
+    \item Pour la démo, montre avec ta souris ce dont tu parles
+\end{itemize}
+\end{conseil}
+
+\end{document}

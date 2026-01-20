@@ -1,0 +1,1260 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% ============================================================================
+% THEME ET COULEURS
+% ============================================================================
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+% Couleurs personnalisées
+\definecolor{darkblue}{RGB}{0, 51, 102}
+\definecolor{lightblue}{RGB}{230, 242, 255}
+\definecolor{accentgreen}{RGB}{0, 128, 0}
+\definecolor{lightgreen}{RGB}{230, 255, 230}
+\definecolor{accentred}{RGB}{180, 0, 0}
+\definecolor{lightred}{RGB}{255, 230, 230}
+\definecolor{accentorange}{RGB}{200, 100, 0}
+\definecolor{lightorange}{RGB}{255, 240, 220}
+\definecolor{accentpurple}{RGB}{100, 0, 150}
+\definecolor{lightpurple}{RGB}{245, 230, 255}
+
+\setbeamercolor{title}{fg=white,bg=darkblue}
+\setbeamercolor{frametitle}{fg=white,bg=darkblue}
+\setbeamercolor{block title}{fg=white,bg=darkblue}
+\setbeamercolor{block body}{fg=black,bg=lightblue}
+
+% Pas de navigation
+\setbeamertemplate{navigation symbols}{}
+
+% Numéros de slides
+\setbeamertemplate{footline}[frame number]
+
+% ============================================================================
+% PACKAGES
+% ============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc,decorations.pathreplacing}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{fontawesome5}
+\usepackage{amsmath,amssymb}
+
+% ============================================================================
+% COMMANDES PERSONNALISÉES
+% ============================================================================
+\newcommand{\partslide}[3]{%
+\begin{frame}
+\begin{center}
+\vspace{1.5cm}
+{\Huge\textcolor{#1}{\faIcon{#2}}}\\[0.8cm]
+{\Huge\textbf{\textcolor{#1}{#3}}}\\[1cm]
+\end{center}
+\end{frame}
+}
+
+% ============================================================================
+% INFOS
+% ============================================================================
+\title{\textbf{xVA Calculation Engine}}
+\subtitle{Calcul des Ajustements de Valorisation et Capital Réglementaire}
+\author{Projet xVA - Équipe de 5}
+\institute{Master Finance}
+\date{}
+
+% ============================================================================
+% DOCUMENT
+% ============================================================================
+\begin{document}
+
+% --------------------------------------------------------------------------
+% SLIDE TITRE
+% --------------------------------------------------------------------------
+\begin{frame}
+\titlepage
+\end{frame}
+
+% --------------------------------------------------------------------------
+% PLAN
+% --------------------------------------------------------------------------
+\begin{frame}{Plan de la Présentation}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+
+\begin{block}{\textcolor{darkblue}{\faIcon{desktop}} Partie 1 - Application \& Démo}
+\small Interface Streamlit, workflow, résultats
+\end{block}
+
+\begin{block}{\textcolor{accentgreen}{\faIcon{chart-line}} Partie 2 - Modèles de Marché}
+\small Ornstein-Uhlenbeck, GBM, corrélations
+\end{block}
+
+\begin{block}{\textcolor{accentorange}{\faIcon{file-invoice-dollar}} Partie 3 - Instruments \& Pricing}
+\small IRS, FX Forward, valorisation
+\end{block}
+
+\end{column}
+
+\begin{column}{0.48\textwidth}
+
+\begin{block}{\textcolor{accentpurple}{\faIcon{shield-alt}} Partie 4 - Exposition \& Collatéral}
+\small EPE, ENE, PFE, VM, IM
+\end{block}
+
+\begin{block}{\textcolor{accentred}{\faIcon{university}} Partie 5 - xVA \& Réglementaire}
+\small CVA, DVA, FVA, MVA, KVA, SA-CCR
+\end{block}
+
+\vspace{0.5cm}
+
+\begin{center}
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=lightblue, minimum width=5cm] {
+    \faIcon{clock} Durée totale : ~25-30 min
+};
+\end{tikzpicture}
+\end{center}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================================
+% PARTIE 1 : APPLICATION & DÉMO
+% ============================================================================
+\partslide{darkblue}{desktop}{Partie 1 : Application \& Démo}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Rappel : C'est quoi les xVA ?}
+
+\begin{block}{xVA = Coûts cachés des produits dérivés}
+Quand une banque fait un trade, le prix "théorique" ne suffit pas. \\
+Il faut ajouter des \textbf{ajustements} pour les vrais risques.
+\end{block}
+
+\vspace{0.3cm}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{\textcolor{accentred}{Coûts :}}
+\begin{itemize}
+    \item \textbf{CVA} -- Risque de défaut contrepartie
+    \item \textbf{FVA} -- Coût de financement
+    \item \textbf{MVA} -- Coût des marges
+    \item \textbf{KVA} -- Coût du capital réglementaire
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{\textcolor{accentgreen}{Bénéfice :}}
+\begin{itemize}
+    \item \textbf{DVA} -- "Gain" si nous faisons défaut
+\end{itemize}
+
+\vspace{0.5cm}
+
+\begin{block}{Formule Clé}
+\centering
+\small
+\textbf{Total = CVA - DVA + FVA + MVA + KVA}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Objectif de l'Application}
+
+\begin{block}{Problème}
+Calculer les xVA à la main est \textbf{impossible} :
+\begin{itemize}
+    \item Simuler des \textbf{milliers de scénarios} futurs
+    \item Calculer l'exposition à \textbf{chaque date}
+    \item Appliquer le \textbf{collatéral}
+    \item Intégrer les \textbf{probabilités de défaut}
+\end{itemize}
+\end{block}
+
+\vspace{0.2cm}
+
+\begin{block}{Solution : Notre Application}
+\begin{center}
+\begin{tikzpicture}[scale=0.85]
+    \node[draw, rounded corners, fill=lightblue, minimum width=2.2cm, minimum height=0.9cm] (input) at (0,0) {\small\textbf{Portefeuille}};
+    \node[draw, rounded corners, fill=darkblue, text=white, minimum width=2.5cm, minimum height=0.9cm] (engine) at (4.5,0) {\small\textbf{Monte Carlo}};
+    \node[draw, rounded corners, fill=lightblue, minimum width=2.2cm, minimum height=0.9cm] (output) at (9,0) {\small\textbf{xVA + SA-CCR}};
+
+    \draw[->, very thick] (input) -- (engine);
+    \draw[->, very thick] (engine) -- (output);
+
+    \node[below, font=\scriptsize] at (0,-0.7) {IRS, FX Fwd};
+    \node[below, font=\scriptsize] at (4.5,-0.7) {5000 simulations};
+    \node[below, font=\scriptsize] at (9,-0.7) {Résultats};
+\end{tikzpicture}
+\end{center}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Technologies \& Architecture}
+
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+\begin{block}{\faIcon{python} Stack Technique}
+\begin{itemize}
+    \item \textbf{Python 3.11+}
+    \item \textbf{NumPy / Pandas} -- Calculs
+    \item \textbf{Streamlit} -- Interface web
+    \item \textbf{Plotly} -- Graphiques
+    \item \textbf{Pydantic} -- Validation
+\end{itemize}
+\end{block}
+
+\begin{block}{\faIcon{calculator} Modèles}
+\begin{itemize}
+    \item \textbf{Ornstein-Uhlenbeck} -- Taux
+    \item \textbf{GBM} -- FX
+    \item \textbf{Monte Carlo} -- Simulation
+\end{itemize}
+\end{block}
+
+\end{column}
+
+\begin{column}{0.47\textwidth}
+\begin{block}{\faIcon{folder-open} Architecture}
+\footnotesize
+\texttt{xva-project/} \\
+\texttt{├── xva\_core/} \\
+\texttt{│\quad ├── market/} \textcolor{gray}{(P2)} \\
+\texttt{│\quad ├── instruments/} \textcolor{gray}{(P3)} \\
+\texttt{│\quad ├── exposure/} \textcolor{gray}{(P4)} \\
+\texttt{│\quad ├── collateral/} \textcolor{gray}{(P4)} \\
+\texttt{│\quad ├── xva/} \textcolor{gray}{(P5)} \\
+\texttt{│\quad └── reg/} \textcolor{gray}{(P5)} \\
+\texttt{├── xva\_app/} \textcolor{gray}{(P1)} \\
+\texttt{└── tests/}
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Interface : Les 9 Onglets}
+
+\begin{center}
+\begin{tikzpicture}[
+    tab/.style={draw, rounded corners, fill=lightblue, minimum width=2.4cm, minimum height=0.8cm, font=\scriptsize},
+    desc/.style={font=\tiny, text width=2.3cm, align=center}
+]
+
+% Ligne 1
+\node[tab] (t1) at (0,1.8) {\faIcon{briefcase} Portfolio};
+\node[tab] (t2) at (2.7,1.8) {\faIcon{chart-area} Exposure};
+\node[tab] (t3) at (5.4,1.8) {\faIcon{dollar-sign} xVA};
+\node[tab] (t4) at (8.1,1.8) {\faIcon{landmark} SA-CCR};
+\node[tab] (t5) at (10.8,1.8) {\faIcon{sliders-h} Calibration};
+
+\node[desc] at (0,0.9) {Définir trades};
+\node[desc] at (2.7,0.9) {EPE, ENE, PFE};
+\node[desc] at (5.4,0.9) {Breakdown xVA};
+\node[desc] at (8.1,0.9) {Capital régl.};
+\node[desc] at (10.8,0.9) {Calibrer};
+
+% Ligne 2
+\node[tab] (t6) at (1.35,-0.3) {\faIcon{bolt} Stress Test};
+\node[tab] (t7) at (4.05,-0.3) {\faIcon{calculator} Sensitivités};
+\node[tab] (t8) at (6.75,-0.3) {\faIcon{book} Méthodologie};
+\node[tab] (t9) at (9.45,-0.3) {\faIcon{download} Export};
+
+\node[desc] at (1.35,-1.2) {Scénarios};
+\node[desc] at (4.05,-1.2) {Greeks};
+\node[desc] at (6.75,-1.2) {Formules};
+\node[desc] at (9.45,-1.2) {Excel/CSV};
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.2cm}
+
+\begin{block}{Workflow}
+\centering
+\textbf{Portfolio} $\rightarrow$ \textbf{Run} $\rightarrow$ \textbf{Exposure} $\rightarrow$ \textbf{xVA} $\rightarrow$ \textbf{SA-CCR} $\rightarrow$ \textbf{Export}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Portefeuille de Démonstration}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{exchange-alt} Interest Rate Swaps}
+\begin{tabular}{lccc}
+\toprule
+\# & Notionnel & Taux & Mat. \\
+\midrule
+1 & 10M\$ & 2.5\% & 5Y \\
+2 & 15M\$ & 2.0\% & 3Y \\
+3 & 8M\$ & 3.0\% & 7Y \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.2cm}
+\scriptsize
+Swap 1 \& 3 : pay fixed / Swap 2 : receive fixed
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{euro-sign} FX Forwards}
+\begin{tabular}{lccc}
+\toprule
+\# & Notionnel & Strike & Mat. \\
+\midrule
+1 & 5M EUR & 1.12 & 1Y \\
+2 & 3M EUR & 1.08 & 2Y \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.2cm}
+\scriptsize
+Fwd 1 : buy EUR / Fwd 2 : sell EUR
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=darkblue, text=white, minimum width=7cm, minimum height=0.9cm] {
+    \textbf{Notionnel Total $\approx$ 44 M\$}
+};
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 1 | Démonstration Live}
+
+\begin{center}
+\vspace{0.5cm}
+
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=lightblue, minimum width=12cm, minimum height=5cm] {};
+
+\node at (0,1.5) {\Huge\faIcon{desktop}};
+\node at (0,0) {\Large\textbf{Démonstration en direct}};
+\node at (0,-1) {\texttt{streamlit run xva\_app/app.py}};
+
+\end{tikzpicture}
+
+\vspace{0.5cm}
+
+\begin{columns}
+\begin{column}{0.3\textwidth}
+\centering
+\faIcon{play-circle} \textbf{Run}\\
+\scriptsize 5000 paths, 5 ans
+\end{column}
+\begin{column}{0.3\textwidth}
+\centering
+\faIcon{chart-line} \textbf{Exposure}\\
+\scriptsize EPE avec/sans collat
+\end{column}
+\begin{column}{0.3\textwidth}
+\centering
+\faIcon{dollar-sign} \textbf{xVA}\\
+\scriptsize Breakdown complet
+\end{column}
+\end{columns}
+
+\end{center}
+
+\end{frame}
+
+% ============================================================================
+% PARTIE 2 : MODÈLES DE MARCHÉ
+% ============================================================================
+\partslide{accentgreen}{chart-line}{Partie 2 : Modèles de Marché}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 2 | Vue d'Ensemble : Quels Facteurs Simuler ?}
+
+\begin{center}
+\begin{tikzpicture}[
+    factor/.style={draw, rounded corners, fill=lightgreen, minimum width=3cm, minimum height=1.2cm, align=center},
+    arrow/.style={->, thick}
+]
+
+\node[factor] (rd) at (0,2) {\textbf{Taux Domestique}\\$r_d(t)$};
+\node[factor] (rf) at (5,2) {\textbf{Taux Étranger}\\$r_f(t)$};
+\node[factor] (fx) at (2.5,0) {\textbf{Taux de Change}\\$S(t)$};
+
+\draw[arrow, darkblue] (rd) -- node[above, font=\scriptsize] {$\rho_{d,f}$} (rf);
+\draw[arrow, darkblue] (rd) -- node[left, font=\scriptsize] {$\rho_{d,x}$} (fx);
+\draw[arrow, darkblue] (rf) -- node[right, font=\scriptsize] {$\rho_{f,x}$} (fx);
+
+\node[below] at (2.5,-1) {\textbf{3 facteurs corrélés} $\rightarrow$ Matrice de corrélation $3 \times 3$};
+
+\end{tikzpicture}
+\end{center}
+
+\begin{block}{Fichiers concernés}
+\texttt{xva\_core/market/} : \texttt{ir\_model.py}, \texttt{fx\_model.py}, \texttt{correlation.py}, \texttt{curve.py}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 2 | Modèle de Taux : Ornstein-Uhlenbeck (Vasicek)}
+
+\begin{block}{Équation Différentielle Stochastique}
+$$\boxed{dr_t = \kappa(\theta - r_t) \, dt + \sigma \, dW_t}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.45\textwidth}
+\textbf{Paramètres :}
+\begin{itemize}
+    \item $r_t$ = taux court à l'instant $t$
+    \item $\kappa$ = vitesse de retour à la moyenne
+    \item $\theta$ = taux moyen long terme
+    \item $\sigma$ = volatilité
+    \item $dW_t$ = mouvement brownien
+\end{itemize}
+\end{column}
+
+\begin{column}{0.52\textwidth}
+\begin{tikzpicture}[scale=0.7]
+    \draw[->] (0,0) -- (7,0) node[right] {\scriptsize $t$};
+    \draw[->] (0,0) -- (0,3.5) node[above] {\scriptsize $r$};
+
+    \draw[dashed, accentgreen] (0,1.5) -- (7,1.5) node[right] {\scriptsize $\theta$};
+
+    \draw[darkblue, thick] plot[smooth] coordinates {(0,2.5) (1,2.2) (2,1.8) (3,1.6) (4,1.7) (5,1.4) (6,1.5)};
+
+    \node[below, font=\scriptsize] at (3.5,-0.3) {Retour vers $\theta$};
+\end{tikzpicture}
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+
+\begin{block}{Valeurs par défaut}
+$\kappa = 0.10$ | $\theta = 2\%$ | $\sigma = 100$ bps
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 2 | Modèle de Change : GBM (Geometric Brownian Motion)}
+
+\begin{block}{Équation Différentielle Stochastique}
+$$\boxed{\frac{dS_t}{S_t} = (r_d - r_f) \, dt + \sigma \, dW_t}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+\textbf{Paramètres :}
+\begin{itemize}
+    \item $S_t$ = taux de change (ex: EUR/USD)
+    \item $r_d - r_f$ = différentiel de taux
+    \item $\sigma$ = volatilité FX
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{Valeurs par défaut :}\\
+$S_0 = 1.10$ | $\sigma_{FX} = 12\%$
+\end{column}
+
+\begin{column}{0.47\textwidth}
+\begin{block}{Log-Euler (simulation)}
+\footnotesize
+$$S_{t+\Delta t} = S_t \exp\left[\left(r_d - r_f - \frac{\sigma^2}{2}\right)\Delta t + \sigma\sqrt{\Delta t}\, Z\right]$$
+
+où $Z \sim \mathcal{N}(0,1)$
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 2 | Corrélations : Décomposition de Cholesky}
+
+\begin{block}{Matrice de Corrélation}
+$$\mathbf{C} = \begin{pmatrix} 1 & \rho_{d,f} & \rho_{d,x} \\ \rho_{d,f} & 1 & \rho_{f,x} \\ \rho_{d,x} & \rho_{f,x} & 1 \end{pmatrix}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Valeurs typiques :}
+\begin{itemize}
+    \item $\rho_{d,f} = 0.7$ (taux corrélés)
+    \item $\rho_{d,x} = -0.3$ (taux $\uparrow$ $\Rightarrow$ devise $\downarrow$)
+    \item $\rho_{f,x} = 0.4$
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Méthode :}
+\begin{enumerate}
+    \item Générer $Z_1, Z_2, Z_3$ indépendants
+    \item Décomposer $\mathbf{C} = \mathbf{L}\mathbf{L}^T$
+    \item Calculer $\tilde{Z} = \mathbf{L} \cdot Z$
+\end{enumerate}
+
+$\Rightarrow$ $\tilde{Z}$ a la corrélation voulue
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{block}{Validation}
+La matrice doit être \textbf{définie positive} (toutes les valeurs propres $> 0$)
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 2 | Hypothèses et Limitations}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{check-circle} Hypothèses}
+\begin{itemize}
+    \item \textbf{Mesure risque-neutre}
+    \item Taux peuvent être négatifs (OU)
+    \item Volatilités constantes
+    \item Pas de sauts
+    \item Corrélations constantes
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{cog} Paramètres Simulation}
+\begin{itemize}
+    \item \textbf{Paths} : 5000
+    \item \textbf{Horizon} : 5 ans
+    \item \textbf{Pas} : trimestriel (20 steps)
+    \item \textbf{Seed} : 42 (reproductibilité)
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{block}{Extensions possibles}
+\begin{itemize}
+    \item Structure par terme de volatilité
+    \item Modèles à sauts (jump-diffusion)
+    \item Corrélations stochastiques
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+% ============================================================================
+% PARTIE 3 : INSTRUMENTS & PRICING
+% ============================================================================
+\partslide{accentorange}{file-invoice-dollar}{Partie 3 : Instruments \& Pricing}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 3 | Vue d'Ensemble : 2 Types d'Instruments}
+
+\begin{center}
+\begin{tikzpicture}[
+    inst/.style={draw, rounded corners, fill=lightorange, minimum width=5cm, minimum height=1.5cm, align=center}
+]
+
+\node[inst] (irs) at (0,0) {\Large\faIcon{exchange-alt}\\[0.2cm]\textbf{Interest Rate Swap (IRS)}};
+\node[inst] (fxf) at (7,0) {\Large\faIcon{euro-sign}\\[0.2cm]\textbf{FX Forward}};
+
+\node[below, font=\small] at (0,-1.3) {Échange taux fixe $\leftrightarrow$ variable};
+\node[below, font=\small] at (7,-1.3) {Achat/vente devise à terme};
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{block}{Fichiers concernés}
+\texttt{xva\_core/instruments/} : \texttt{base.py}, \texttt{irs.py}, \texttt{fxforward.py}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 3 | Interest Rate Swap : Valorisation}
+
+\begin{block}{Principe}
+À chaque date $t$, le swap a une valeur = différence entre les deux jambes
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Jambe Fixe :}
+$$PV_{fix} = N \times K \times \sum_{i} \tau_i \times DF(t, T_i)$$
+
+\begin{itemize}
+    \item $N$ = notionnel
+    \item $K$ = taux fixe
+    \item $\tau_i$ = fraction d'année
+    \item $DF$ = facteur d'actualisation
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Jambe Variable :}
+$$PV_{float} \approx N \times [1 - DF(t, T)]$$
+
+\textbf{Valeur du Swap (pay fixed) :}
+$$MTM = PV_{float} - PV_{fix}$$
+\end{column}
+\end{columns}
+
+\vspace{0.2cm}
+
+\begin{block}{Signe}
+\textbf{Pay fixed} : MTM $>$ 0 si taux montent / \textbf{Receive fixed} : MTM $>$ 0 si taux baissent
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 3 | FX Forward : Valorisation}
+
+\begin{block}{Principe}
+Accord pour échanger des devises à une date future au taux $K$ (strike)
+\end{block}
+
+\begin{block}{Formule de Valorisation}
+$$\boxed{MTM = N_f \times S(t) \times DF_f(t,T) - N_f \times K \times DF_d(t,T)}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Paramètres :}
+\begin{itemize}
+    \item $N_f$ = notionnel en devise étrangère
+    \item $S(t)$ = spot à l'instant $t$
+    \item $K$ = strike (taux forward)
+    \item $DF_d, DF_f$ = discount factors
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Exemple :}\\
+$N_f = 5M$ EUR, $K = 1.12$\\
+Si $S(t) = 1.15$ et $DF \approx 0.98$ :
+$$MTM \approx 5M \times (1.15 - 1.12) \times 0.98$$
+$$MTM \approx 147\,000 \text{ USD}$$
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 3 | Sanity Checks : Validation}
+
+\begin{block}{\faIcon{check} Tests de Cohérence}
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Test} & \textbf{Attendu} & \textbf{Vérifié ?} \\
+\midrule
+IRS at-the-money à $t=0$ & MTM $\approx 0$ & \textcolor{accentgreen}{\faIcon{check}} \\
+Vol = 0 & MTM = valeur déterministe & \textcolor{accentgreen}{\faIcon{check}} \\
+Taux $\uparrow$ & MTM pay-fixed $\uparrow$ & \textcolor{accentgreen}{\faIcon{check}} \\
+FX spot $\uparrow$ & MTM buy-foreign $\uparrow$ & \textcolor{accentgreen}{\faIcon{check}} \\
+Maturité atteinte & MTM $\rightarrow 0$ & \textcolor{accentgreen}{\faIcon{check}} \\
+\bottomrule
+\end{tabular}
+
+\end{block}
+
+\vspace{0.3cm}
+
+\begin{block}{Ordre de Grandeur}
+Pour un swap 10M\$ à 5 ans avec vol = 100 bps :\\
+MTM typique : $\pm$ 200k - 500k USD (quelques \% du notionnel)
+\end{block}
+
+\end{frame}
+
+% ============================================================================
+% PARTIE 4 : EXPOSITION & COLLATÉRAL
+% ============================================================================
+\partslide{accentpurple}{shield-alt}{Partie 4 : Exposition \& Collatéral}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | La Chaîne de Calcul}
+
+\begin{center}
+\begin{tikzpicture}[
+    block/.style={draw, rounded corners, fill=lightpurple, minimum width=2.3cm, minimum height=1cm, align=center, font=\small},
+    arrow/.style={->, very thick, accentpurple}
+]
+
+\node[block] (paths) at (0,0) {Monte Carlo\\Paths};
+\node[block] (mtm) at (3.5,0) {MTM par\\instrument};
+\node[block] (net) at (7,0) {Netting\\Set};
+\node[block] (exp) at (10.5,0) {EPE/ENE\\PFE};
+
+\draw[arrow] (paths) -- (mtm);
+\draw[arrow] (mtm) -- (net);
+\draw[arrow] (net) -- (exp);
+
+\node[below, font=\scriptsize] at (0,-0.8) {5000 × 20};
+\node[below, font=\scriptsize] at (3.5,-0.8) {Pricing};
+\node[below, font=\scriptsize] at (7,-0.8) {Somme};
+\node[below, font=\scriptsize] at (10.5,-0.8) {Statistiques};
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{block}{Fichiers concernés}
+\texttt{xva\_core/exposure/} : \texttt{simulator.py}, \texttt{netting.py}, \texttt{metrics.py}\\
+\texttt{xva\_core/collateral/} : \texttt{vm.py}, \texttt{im.py}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | Métriques d'Exposition}
+
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{block}{EPE}
+\footnotesize
+\textbf{Expected Positive Exposure}
+$$EPE(t) = \mathbb{E}[\max(V_t, 0)]$$
+Moyenne quand on est "gagnant"
+\end{block}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\begin{block}{ENE}
+\footnotesize
+\textbf{Expected Negative Exposure}
+$$ENE(t) = \mathbb{E}[\max(-V_t, 0)]$$
+Moyenne quand on est "perdant"
+\end{block}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\begin{block}{PFE}
+\footnotesize
+\textbf{Potential Future Exposure}
+$$PFE_{95\%}(t) = Q_{95\%}[V_t^+]$$
+Pire cas (quantile)
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    \draw[->] (0,0) -- (8,0) node[right] {\scriptsize Temps};
+    \draw[->] (0,-1.5) -- (0,2.5) node[above] {\scriptsize Exp.};
+
+    \fill[lightpurple, opacity=0.5] plot[smooth] coordinates {(0,0.3) (1,0.8) (2,1.2) (3,1.5) (4,1.3) (5,1.0) (6,0.6) (7,0.2)} -- (7,0) -- (0,0) -- cycle;
+
+    \draw[accentpurple, very thick] plot[smooth] coordinates {(0,0.3) (1,0.8) (2,1.2) (3,1.5) (4,1.3) (5,1.0) (6,0.6) (7,0.2)};
+
+    \draw[accentred, thick, dashed] plot[smooth] coordinates {(0,0.5) (1,1.4) (2,2.0) (3,2.3) (4,2.0) (5,1.6) (6,1.0) (7,0.4)};
+
+    \node[accentpurple, right, font=\scriptsize] at (7.2,0.2) {EPE};
+    \node[accentred, right, font=\scriptsize] at (7.2,0.4) {PFE 95\%};
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | Netting : Réduction de l'Exposition}
+
+\begin{block}{Principe du Netting}
+Sous un accord ISDA, si la contrepartie fait défaut, on compense tous les trades.
+
+\textbf{Sans netting :} Exposition = somme des MTM positifs\\
+\textbf{Avec netting :} Exposition = max(somme de tous les MTM, 0)
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Exemple :}
+\begin{itemize}
+    \item Trade 1 : MTM = +500k
+    \item Trade 2 : MTM = -300k
+    \item Trade 3 : MTM = +200k
+\end{itemize}
+
+\textbf{Sans netting :} 500k + 200k = 700k\\
+\textbf{Avec netting :} 500k - 300k + 200k = 400k
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{Net-to-Gross Ratio}
+$$NGR = \frac{\text{Net Exposure}}{\text{Gross Exposure}}$$
+
+Dans l'exemple : $NGR = \frac{400}{700} = 57\%$
+
+$\Rightarrow$ Réduction de 43\% grâce au netting
+\end{block}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | Variation Margin (VM)}
+
+\begin{block}{Principe}
+Échange quotidien de collatéral pour couvrir le MTM courant
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+\textbf{Paramètres :}
+\begin{itemize}
+    \item \textbf{Threshold} : seuil d'appel (ex: 1M\$)
+    \item \textbf{MTA} : montant min de transfert (ex: 100k\$)
+    \item \textbf{MPR} : période de risque (ex: 10 jours)
+\end{itemize}
+
+\textbf{Logique :}
+\begin{enumerate}
+    \item Si $|MTM - Collat| > Threshold$
+    \item Et si variation $>$ MTA
+    \item Alors appel de marge
+\end{enumerate}
+\end{column}
+
+\begin{column}{0.42\textwidth}
+\begin{tikzpicture}[scale=0.65]
+    \draw[->] (0,0) -- (6,0) node[right] {\tiny $t$};
+    \draw[->] (0,-0.5) -- (0,3) node[above] {\tiny MTM};
+
+    \draw[darkblue, thick] plot[smooth] coordinates {(0,0.5) (1,1.2) (2,1.8) (3,1.5) (4,2.2) (5,1.8)};
+    \draw[accentgreen, thick, dashed] plot[smooth] coordinates {(0,0) (1,0.2) (2,0.8) (3,0.5) (4,1.2) (5,0.8)};
+
+    \node[darkblue, font=\tiny] at (5.5,1.8) {MTM};
+    \node[accentgreen, font=\tiny] at (5.5,0.5) {Collat};
+
+    \draw[<->, accentred] (4,1.2) -- (4,2.2);
+    \node[accentred, right, font=\tiny] at (4.1,1.7) {Risque};
+\end{tikzpicture}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | Initial Margin (IM)}
+
+\begin{block}{Principe}
+Collatéral supplémentaire pour couvrir le risque pendant le MPR
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Pourquoi ?}\\
+Pendant les 10 jours du MPR, le marché bouge mais pas le collatéral VM.
+
+\vspace{0.3cm}
+
+\textbf{Calcul simplifié :}
+$$IM \approx k \times EPE$$
+où $k \approx 1.5$ (multiplicateur)
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Impact sur l'exposition :}
+
+\begin{tikzpicture}[scale=0.6]
+    \draw[->] (0,0) -- (6,0) node[right] {\tiny $t$};
+    \draw[->] (0,0) -- (0,3) node[above] {\tiny Exp.};
+
+    \draw[accentred, thick] plot[smooth] coordinates {(0,0.5) (1,1.5) (2,2.2) (3,2.5) (4,2.0) (5,1.0)};
+    \draw[accentgreen, thick] plot[smooth] coordinates {(0,0.2) (1,0.6) (2,0.9) (3,1.0) (4,0.8) (5,0.4)};
+
+    \node[accentred, font=\tiny] at (3.5,2.8) {Sans collat};
+    \node[accentgreen, font=\tiny] at (3.5,0.5) {Avec VM+IM};
+\end{tikzpicture}
+
+\textbf{Réduction typique : 50-70\%}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 4 | Graphiques : Avant/Après Collatéral}
+
+\begin{center}
+\textbf{Impact du collatéral sur les profils d'exposition}
+\end{center}
+
+\begin{columns}
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{EPE Profile}
+
+\begin{tikzpicture}[scale=0.75]
+    \draw[->] (0,0) -- (5.5,0) node[right] {\scriptsize Temps};
+    \draw[->] (0,0) -- (0,3.5) node[above] {\scriptsize EPE};
+
+    \fill[lightred, opacity=0.3] plot[smooth] coordinates {(0,0.3) (1,1.2) (2,2.0) (3,2.5) (4,2.0) (5,0.8)} -- (5,0) -- (0,0) -- cycle;
+    \draw[accentred, very thick] plot[smooth] coordinates {(0,0.3) (1,1.2) (2,2.0) (3,2.5) (4,2.0) (5,0.8)};
+
+    \fill[lightgreen, opacity=0.3] plot[smooth] coordinates {(0,0.1) (1,0.5) (2,0.9) (3,1.1) (4,0.8) (5,0.3)} -- (5,0) -- (0,0) -- cycle;
+    \draw[accentgreen, very thick] plot[smooth] coordinates {(0,0.1) (1,0.5) (2,0.9) (3,1.1) (4,0.8) (5,0.3)};
+
+    \node[accentred, font=\scriptsize] at (4.5,2.3) {Sans};
+    \node[accentgreen, font=\scriptsize] at (4.5,0.5) {Avec};
+\end{tikzpicture}
+\end{center}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{ENE Profile}
+
+\begin{tikzpicture}[scale=0.75]
+    \draw[->] (0,0) -- (5.5,0) node[right] {\scriptsize Temps};
+    \draw[->] (0,0) -- (0,3.5) node[above] {\scriptsize ENE};
+
+    \fill[lightred, opacity=0.3] plot[smooth] coordinates {(0,0.2) (1,0.8) (2,1.3) (3,1.6) (4,1.3) (5,0.5)} -- (5,0) -- (0,0) -- cycle;
+    \draw[accentred, very thick] plot[smooth] coordinates {(0,0.2) (1,0.8) (2,1.3) (3,1.6) (4,1.3) (5,0.5)};
+
+    \fill[lightgreen, opacity=0.3] plot[smooth] coordinates {(0,0.1) (1,0.3) (2,0.5) (3,0.6) (4,0.5) (5,0.2)} -- (5,0) -- (0,0) -- cycle;
+    \draw[accentgreen, very thick] plot[smooth] coordinates {(0,0.1) (1,0.3) (2,0.5) (3,0.6) (4,0.5) (5,0.2)};
+
+    \node[accentred, font=\scriptsize] at (4.5,1.5) {Sans};
+    \node[accentgreen, font=\scriptsize] at (4.5,0.3) {Avec};
+\end{tikzpicture}
+\end{center}
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=lightgreen, minimum width=8cm] {
+    \textbf{Le collatéral réduit l'exposition de 50-60\%}
+};
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+% ============================================================================
+% PARTIE 5 : xVA & RÉGLEMENTAIRE
+% ============================================================================
+\partslide{accentred}{university}{Partie 5 : xVA \& Réglementaire}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | Les 5 xVA : Vue d'Ensemble}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{xVA} & \textbf{Nom Complet} & \textbf{Input Principal} & \textbf{Type} \\
+\midrule
+\textbf{CVA} & Credit VA & EPE + PD contrepartie & \textcolor{accentred}{Coût} \\
+\textbf{DVA} & Debt VA & ENE + PD propre & \textcolor{accentgreen}{Bénéfice} \\
+\textbf{FVA} & Funding VA & EPE + spread funding & \textcolor{accentred}{Coût} \\
+\textbf{MVA} & Margin VA & IM + spread funding & \textcolor{accentred}{Coût} \\
+\textbf{KVA} & Capital VA & EAD + coût du capital & \textcolor{accentred}{Coût} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{block}{Formule Totale}
+$$\boxed{\text{Total xVA} = \text{CVA} - \text{DVA} + \text{FVA} + \text{MVA} + \text{KVA}}$$
+\end{block}
+
+\begin{block}{Fichiers concernés}
+\texttt{xva\_core/xva/} : \texttt{cva.py}, \texttt{dva.py}, \texttt{fva.py}, \texttt{mva.py}, \texttt{kva.py}\\
+\texttt{xva\_core/reg/} : \texttt{saccr.py}
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | CVA : Credit Valuation Adjustment}
+
+\begin{block}{Définition}
+Coût du risque que la \textbf{contrepartie fasse défaut}
+\end{block}
+
+\begin{block}{Formule}
+$$\boxed{CVA = \sum_{i=1}^{n} DF(t_i) \times EPE(t_i) \times LGD \times \Delta PD(t_i)}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Inputs :}
+\begin{itemize}
+    \item $EPE(t_i)$ : exposition positive
+    \item $LGD$ : loss given default (60\%)
+    \item $\Delta PD$ : prob. défaut incrémentale
+    \item $DF$ : facteur d'actualisation
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Hazard Rate $\lambda$ :}
+$$S(t) = e^{-\lambda t}$$
+$$\Delta PD(t_i) = S(t_{i-1}) - S(t_i)$$
+
+\textbf{Typiquement :} $\lambda = 1-2\%$ p.a.
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | DVA, FVA, MVA}
+
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{block}{DVA}
+\footnotesize
+"Bénéfice" de notre propre risque
+
+$$DVA = \sum DF \times ENE \times LGD_{own} \times \Delta PD_{own}$$
+
+\textcolor{accentgreen}{Soustrait du total}
+\end{block}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\begin{block}{FVA}
+\footnotesize
+Coût de financement de l'exposition
+
+$$FVA = \sum DF \times EPE \times s_f \times \Delta t$$
+
+$s_f$ = spread funding (~100 bps)
+\end{block}
+\end{column}
+
+\begin{column}{0.32\textwidth}
+\begin{block}{MVA}
+\footnotesize
+Coût de financement de l'IM
+
+$$MVA = \sum DF \times IM \times s_f \times \Delta t$$
+
+IM = Initial Margin
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.5cm}
+
+\begin{block}{KVA}
+$$KVA = \sum_{i} DF(t_i) \times K(t_i) \times CoC \times \Delta t$$
+où $K = \beta \times EAD$ (capital = ratio $\times$ exposition), CoC = 10\%
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | SA-CCR : Standardized Approach for CCR}
+
+\begin{block}{Objectif}
+Calculer l'\textbf{Exposure at Default (EAD)} pour le capital réglementaire (Bâle III)
+\end{block}
+
+\begin{block}{Formule SA-CCR}
+$$\boxed{EAD = \alpha \times (RC + PFE)}$$
+\end{block}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Composantes :}
+\begin{itemize}
+    \item $\alpha = 1.4$ (multiplicateur Bâle)
+    \item $RC$ = Replacement Cost = max(MTM - C, 0)
+    \item $PFE$ = multiplier $\times$ AddOn
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Supervisory Factors :}
+\begin{itemize}
+    \item Taux d'intérêt : \textbf{0.5\%}
+    \item FX : \textbf{4\%}
+    \item Actions : 32\%
+    \item Commodities : 18\%
+\end{itemize}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | SA-CCR : Exemple de Calcul}
+
+\begin{exemple}{}
+\textbf{Portefeuille :} 1 IRS 10M\$ (5Y) + 1 FX Fwd 5M EUR, MTM = +800k, pas de collat
+
+\vspace{0.2cm}
+
+\textbf{1. Replacement Cost}
+$$RC = \max(800\,000 - 0, 0) = 800\,000$$
+
+\textbf{2. Add-On IRS} (SF = 0.5\%, MF = $\sqrt{5}$ = 2.24)
+$$AddOn_{IR} = 10\,000\,000 \times 0.5\% \times 2.24 = 111\,803$$
+
+\textbf{3. Add-On FX} (SF = 4\%)
+$$AddOn_{FX} = 5\,500\,000 \times 4\% = 220\,000$$
+
+\textbf{4. EAD}
+$$EAD = 1.4 \times (800\,000 + 111\,803 + 220\,000) = \boxed{1\,584\,524}$$
+\end{exemple}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | Alignement Bâle III / "Bâle IV"}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{check-circle} Ce qu'on couvre (Bâle III)}
+\begin{itemize}
+    \item \textbf{SA-CCR} pour EAD
+    \item Expositions dérivés OTC
+    \item Netting agreements
+    \item Collatéral (VM + IM)
+    \item Supervisory factors standards
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{block}{\faIcon{arrow-right} Enjeux "Bâle IV" (2025+)}
+\begin{itemize}
+    \item \textbf{Output floor} : RWA min = 72.5\% du standard
+    \item Révision des modèles internes
+    \item FRTB pour risque de marché
+    \item CVA capital charge renforcé
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+
+\vspace{0.3cm}
+
+\begin{block}{Impact sur les xVA}
+Bâle IV $\Rightarrow$ Plus de capital requis $\Rightarrow$ KVA plus élevé $\Rightarrow$ Coût des dérivés $\uparrow$
+\end{block}
+
+\end{frame}
+
+% --------------------------------------------------------------------------
+\begin{frame}{Partie 5 | Résumé : Breakdown xVA Typique}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{center}
+\textbf{Exemple de Résultats}
+
+\begin{tabular}{lr}
+\toprule
+\textbf{Composante} & \textbf{Valeur} \\
+\midrule
+CVA & +45,000 \$ \\
+DVA & -15,000 \$ \\
+FVA & +25,000 \$ \\
+MVA & +10,000 \$ \\
+KVA & +20,000 \$ \\
+\midrule
+\textbf{Total xVA} & \textbf{+85,000 \$} \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+
+\small
+$\approx$ 19 bps sur 44M\$ de notionnel
+\end{center}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\begin{center}
+\begin{tikzpicture}[scale=0.7]
+    \draw[fill=accentred!70] (0,0) rectangle (2,3.5);
+    \draw[fill=accentgreen!70] (2.5,0) rectangle (4.5,1.2);
+    \draw[fill=accentorange!70] (5,0) rectangle (7,2);
+    \draw[fill=accentpurple!70] (7.5,0) rectangle (9.5,0.8);
+    \draw[fill=darkblue!70] (10,0) rectangle (12,1.6);
+
+    \node[white, font=\scriptsize] at (1,1.75) {CVA};
+    \node[white, font=\scriptsize] at (3.5,0.6) {DVA};
+    \node[white, font=\scriptsize] at (6,1) {FVA};
+    \node[white, font=\scriptsize] at (8.5,0.4) {MVA};
+    \node[white, font=\scriptsize] at (11,0.8) {KVA};
+\end{tikzpicture}
+
+\vspace{0.3cm}
+
+\small
+CVA = composante principale (~50\%)
+\end{center}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================================
+% CONCLUSION
+% ============================================================================
+\begin{frame}{Conclusion}
+
+\begin{block}{\faIcon{check-circle} Ce que fait notre application}
+\begin{enumerate}
+    \item \textbf{Simule} les marchés (Monte Carlo, OU, GBM)
+    \item \textbf{Valorise} les instruments (IRS, FX Forward)
+    \item \textbf{Calcule} les expositions (EPE, ENE, PFE)
+    \item \textbf{Applique} le collatéral (VM, IM)
+    \item \textbf{Produit} les xVA (CVA, DVA, FVA, MVA, KVA)
+    \item \textbf{Calcule} le capital réglementaire (SA-CCR)
+\end{enumerate}
+\end{block}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tikzpicture}
+\node[draw, rounded corners, fill=lightblue, minimum width=10cm, minimum height=1.2cm, font=\large] {
+    \textbf{Questions ?}
+};
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+\end{document}
